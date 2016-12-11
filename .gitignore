@@ -1,0 +1,5 @@
+*.o
+mpp
+lexer.h
+lexer.c
+mpp-test
