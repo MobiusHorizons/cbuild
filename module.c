@@ -113,7 +113,8 @@ module * module_parse(const char * filename){
     }
     
     // set the current directory to the parent directory of the open file
-    char * new_cwd = dirname_r(filename, buffer[1]);
+    strcpy(buffer[1], filename);
+    char * new_cwd = dirname(buffer[1]);
     /*printf("CD: %s\n", new_cwd);*/
     chdir(new_cwd);
 
