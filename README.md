@@ -55,3 +55,32 @@ the module's namespace prefix (currently based on the filename).
 ### Generated Syntax
 
 `void do(void){` -> `void awesome_do(void{`
+
+
+# Build Instructions:
+
+The project probably works on all `posix` based systems, however
+it has only been tested on OSX.
+
+## Dependencies:
+* `flex`
+* `libc`
+* `C` compiler.
+* `make`
+
+to build, simply run:
+```sh
+make
+```
+
+this will generate the `mpp` binary.
+
+# Usage:
+
+At this point `mpp` takes a file as input, and outputs to
+`stdout`. To compile a file `test.c` with `mpp` and `gcc`, run
+the following:
+
+```sh
+mpp test.c | gcc -x c - -o test
+```
