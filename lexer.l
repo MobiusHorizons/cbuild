@@ -3,6 +3,7 @@
 %}
 
 %option reentrant
+%option noyywrap
 
 
 DIGIT    [0-9]
@@ -27,9 +28,3 @@ export{SEP}{ID}{SEP}?; {
 }
 
 %%
-int yywrap(){
-  return 1;
-}
-
-
-
