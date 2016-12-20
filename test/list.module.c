@@ -1,14 +1,14 @@
-
+package "list";
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct {
+export typedef struct {
   unsigned length;
   size_t allocated_size;
   void ** items; 
-} list_List;
+} List;
 
-int list_push(list_List *l, void* item){
+export int push(List *l, void* item){
   // check if we need to allocate memory
   if (l->length >= (l->allocated_size / sizeof(void*))){
     size_t next_size = (l->allocated_size > 0) ? l->allocated_size * 2 : sizeof(void*);
@@ -20,12 +20,12 @@ int list_push(list_List *l, void* item){
     l->allocated_size = next_size;
   }
 
-  // list_push the item;
+  // push the item;
   l->items[l->length++] = item;
   return l->length;
 };
 
-void * list_get(list_List * l, unsigned index){
+export void * get(List * l, unsigned index){
     if (index < l->length){
         return l->items[index];
     }
