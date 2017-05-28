@@ -14,9 +14,14 @@ ES       (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
 WS       [ \t\v\n\f]
 SEP      [ \t\v\n\f]+
 STRUCT   ((struct|union|enum)?)
+TYPE     (typedef|int|char|long|short|double|float|void)
 %%
 {ID} {
     module_ID(yyin, yytext);
+}
+
+"."{ID} {
+    module_export_declaration(yyin,yytext);
 }
 
 {ID}"."{ID} {
@@ -56,6 +61,18 @@ import{SEP}{ID}{SEP}from{SEP}{FILENAME}{SEP}?; {
 
 export{SEP}? {
   module_export_start(yyin, yytext);
+}
+
+typedef{SEP}? {
+  module_export_type(yyin, yytext, TYPE);
+}
+
+enum{SEP}? {
+  module_export_type(yyin, yytext, ENUM);
+}
+
+struct{SEP}? {
+  module_export_type(yyin, yytext, STRUCT);
 }
 
 (.|\n) {

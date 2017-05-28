@@ -2,11 +2,14 @@ DEPS_SRC :=
 DEPS_INC := $(shell ls -d deps/*/ | sed -e 's/^\s*/-I/')
 
 CCFLAGS := -g $(CCFLAGS) $(DEPS_INC)
+PREFIX  ?= /usr/local
 
 ALL : mpp
 
 test : mpp
 	./mpp test/test.module.c
+
+test : lexer.c
 
 mpp-test : mpp test/test.c test/list.c 
 	./mpp test/test.c | $(CC) -o ./mpp-test -x c -
@@ -40,3 +43,5 @@ watch :
 		fswatch -1 -r . >/dev/null;\
 	done
 
+install: mpp
+	cp mpp $(PREFIX)/bin

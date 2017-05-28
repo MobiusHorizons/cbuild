@@ -1,12 +1,18 @@
 #include "./module.h"
 #include <string.h>
+#include <stdbool.h>
 #include <libgen.h>
 #include <limits.h>
+#include <unistd.h>
 
 char cwd_buffer[PATH_MAX];
 char path_buffer[PATH_MAX];
 char * cwd;
-char * objects;
+
+struct config {
+    bool verbose;
+    bool run_make;
+};
 
 static void print_dependencies(module * m, FILE* out){
     size_t prefix_len = strlen(cwd) + 1;
@@ -27,12 +33,14 @@ static void print_dependencies(module * m, FILE* out){
 
 }
 
-static void walk_dependencies(module * m, FILE* out){
+static char * walk_dependencies(module * m, FILE* out, char * objects){
+    if (m->is_exported) return objects;
+
     size_t prefix_len = strlen(cwd) + 1;
     print_dependencies(m, out);
     import_t * i;
     for (i = &m->imports[0]; i != NULL; i = i->hh.next){
-        walk_dependencies(i->module, out);
+        objects = walk_dependencies(i->module, out, objects);
     }
 
     strcpy(path_buffer, m->generated_path + prefix_len);
@@ -46,10 +54,12 @@ static void walk_dependencies(module * m, FILE* out){
     strcat(objects, path_buffer);
     strcat(objects, ".o");
 
+    m->is_exported = true;
+    return objects;
 }
 
 void write_headers(module * root, char * path){
-    char * header_path = path;
+    char * header_path = strdup(path);
     char * ext = index(header_path, '.');
     if (ext){
         *ext = '\0';
@@ -57,6 +67,7 @@ void write_headers(module * root, char * path){
     strcat(header_path, ".h");
 
     FILE* header = fopen(header_path, "w");
+    free(header_path);
 
     export_t * e;
     for (e = &root->exports[0]; e != NULL; e = e->hh.next){
@@ -66,14 +77,32 @@ void write_headers(module * root, char * path){
     fclose(header);
 }
 
-int main( argc, argv )
-int argc;
-char **argv;
-{
-  ++argv, --argc;	/* skip over program name */
-  if ( argc > 0 ){
-    module * root = module_parse(argv[0]);
-    objects = strdup("");
+int main(int argc, char **argv){
+  ++argv; --argc;	/* skip over program name */
+  char * root_file = NULL;
+  struct config conf = {0};
+
+  /* parse CLI */
+  while( argc > 0){
+      if ( argv[0][0] == '-' && strlen(*argv) == 2){
+          switch(argv[0][1]) {
+              case 'm':
+                  conf.run_make = true;
+                  break;
+              case 'v':
+                  conf.verbose = true;
+                  break;
+              default:
+                  fprintf(stderr, "Unknown option (%s)\n", *argv);
+          }
+      } else {
+          root_file = *argv;
+      }
+      argv++; argc--;
+  }
+
+  if ( root_file != NULL ){
+    module * root = module_parse(root_file, conf.verbose);
     strcpy(cwd_buffer, root->abs_path);
     cwd = strdup(dirname(cwd_buffer));
 
@@ -93,15 +122,15 @@ char **argv;
 
     strcat(makefile_path, ".mk");
     FILE* makefile = fopen(makefile_path, "w");
-    free(makefile_path);
 
-    walk_dependencies(root, makefile);
+    char * objects = walk_dependencies(root, makefile, strdup(""));
 
     if (strcmp(root->name, "main") == 0){
         fprintf(makefile, "%s:%s\n", libname, objects);
         fprintf(makefile, "\t$(CC) %s -o %s\n", objects, libname);
     } else {
-        fprintf(makefile, "%s.a:%s\n", libname, objects);
+        strcat(libname, ".a");
+        fprintf(makefile, "%s:%s\n", libname, objects);
         fprintf(makefile, "\tar rcs $@ $^\n");
 
         if (root->exports){
@@ -111,8 +140,18 @@ char **argv;
     }
     fclose(makefile);
 
+    if (conf.run_make){
+        pid_t p = fork();
+        if (p){
+            wait(NULL);
+        } else {
+            chdir(dirname(makefile_path));
+            execlp("make", "make", "-f", basename(makefile_path), libname, NULL);
+        }
+    }
+    free(makefile_path);
+    free(cwd);
+    free(objects);
   }
-  free(cwd);
-  free(objects);
 }
 

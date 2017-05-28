@@ -9,6 +9,49 @@
 #include <libgen.h>
 #include <unistd.h>
 
+
+#define SEP '/'
+
+int count_levels(const char * path){
+  int i = 0, levels = 0;
+  bool escaped = false;
+
+  while(path[i] != '\0'){
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (path[i] == '\\') escaped = true;
+    if (path[i] == SEP) levels++;
+    i++;
+  }
+
+  return levels;
+}
+
+char * relative(const char * from, const char * to){
+  // determine shared prefix;
+
+  int i = 0, last_sep = 0;
+  while(from[i] != '\0' && to[i] != '\0' && from[i] == to[i]){
+    if (from[i] == SEP){
+      last_sep = i;
+    }
+    i++;
+  }
+  int dots = count_levels(&from[last_sep +1]);
+
+  char * rel = malloc(dots * 3 + strlen(&to[last_sep]));
+  rel[0] = 0;
+  while (dots--){
+    strcat(rel, "../");
+  }
+  strcat(rel, &to[last_sep + 1]);
+  return rel;
+}
+
+static void enumerate_exports(module * m, FILE* out);
+
 module modules[255] = {0};
 module * module_cache = NULL;
 
@@ -16,19 +59,57 @@ long level[2] = {0};
 int recording = 0;
 statement_t c_stmt;
 
+const char* type_names[] = {
+    "VARIABLE",
+    "TYPE",
+    "UNION",
+    "STRUCT",
+    "ENUM"
+};
+
+static void write_headers(module * dep, module * m){
+    if (dep->header_path == NULL){
+        char * header_path = relative(m->abs_path, dep->abs_path); 
+        char * ext = index(header_path, '.');
+        if (ext){
+            *ext = '\0';
+        }
+        strcat(header_path, ".h");
+
+        FILE* header = fopen(header_path, "w");
+        dep->header_path = strdup(header_path);
+        free(header_path);
+        
+        enumerate_exports(dep, header);
+
+        fclose(header);
+    }
+    fprintf(m->out, "#include \"%s\"\n", dep->header_path); 
+}
+
+#define GUARDS_HEAD "#ifndef _%s_\n#define _%s_\n"
+#define GUARDS_FOOT "#endif\n"
 static void enumerate_exports(module * m, FILE* out){
     /*fprintf(stderr, "EXPORTS for '%s'\n", m->abs_path);*/
     /*fprintf(stderr, "Package : %s\n", m->name);*/
     export_t * e;
 
-    fprintf(out, "\n/* included from %s */\n", m->abs_path);
-    
+    fprintf(out, GUARDS_HEAD, m->name, m->name);
+    if (m->verbose){
+        fprintf(stderr, GUARDS_HEAD, m->name, m->name);
+    }
+
     for (e = &m->exports[0]; e != NULL; e = e->hh.next){
-        /*fprintf(stderr, "\t%s_%s: \"%s\"\n", m->name, e->name, e->declaration);*/
-        fprintf(out, "%s\n", e->declaration);
+        if (m->verbose){
+            fprintf(stderr, "%s_%s (%s): \"%s\"\n\n", m->name, e->name, type_names[e->type], e->declaration);
+        }
+        fprintf(out, "%s\n\n", e->declaration);
     }
     fprintf(out, "\n");
-
+    fprintf(out, GUARDS_FOOT);
+    if (m->verbose){
+        fprintf(stderr, GUARDS_FOOT);
+    }
 }
 
 static import_t * parse_import(import_t * imports, const char * line){
@@ -77,9 +158,12 @@ void module_imports(FILE*current, const char * line){
     module * m = &modules[fileno(current)];
     import_t * imports = m->imports;
     import_t * import = parse_import(imports, line);
+#ifdef DEBUG
      /*printf("IMPORT: module %s will be aliased as '%s'\n", import->file, import->alias);*/
-    import->module = module_parse(import->file);
-    enumerate_exports(import->module, m->out);
+#endif
+    import->module = module_parse(import->file, m->verbose);
+    write_headers(import->module, m);
+    /*enumerate_exports(import->module, m->out);*/
     HASH_ADD_STR(m->imports, alias, import);
 }
 
@@ -108,10 +192,19 @@ char * module_prefix(FILE* current, const char * line){
         return strdup(line);
     }
     fprintf(m->out,"%s", line);
+#ifdef DEBUG
+    printf("%s", line);
+#endif
     return NULL;
 }
 
-module * module_parse(const char * filename){
+module * module_parse(const char * filename, bool verbose){
+    char * abs_path = realpath(filename, NULL);
+
+    module * m = NULL;
+    HASH_FIND_STR(module_cache, abs_path, m);
+    if (m != NULL) return m;
+
     yyscan_t scanner;
     yylex_init(&scanner);
 
@@ -128,9 +221,10 @@ module * module_parse(const char * filename){
     /*printf("parsing %s, fd = %d\n", filename, fd);*/
     char * fname = strdup(filename);
     modules[fd].imports = NULL;
+    modules[fd].verbose = verbose;
 
     // get full path for caching purposes
-    modules[fd].abs_path = realpath(filename, NULL);
+    modules[fd].abs_path = abs_path;
 
     // set the current directory to the parent directory of the open file
     strcpy(buffer[1], filename);
@@ -143,19 +237,18 @@ module * module_parse(const char * filename){
         *ext = '\0';
     }
     modules[fd].name = strdup(package);
-
+    modules[fd].is_exported = false;
     
-    char * original_name = modules[fd].abs_path;
-    char * generated_path = strdup(original_name);
+    char * generated_path = strdup(abs_path);
     ext = index(generated_path, '.');
     if (ext){
         *ext = '\0';
     }
     // get generated c file name;
-    FILE * out;
-    if (strlen(original_name) - strlen(generated_path) >= 2){
+    FILE * out = NULL;
+    if (strlen(abs_path) - strlen(generated_path) >= 2){
         strcat(generated_path, ".c");
-        if (strcmp(generated_path, original_name) != 0){
+        if (strcmp(generated_path, abs_path) != 0){
             out = fopen(generated_path, "w");
         }
     }
@@ -168,6 +261,7 @@ module * module_parse(const char * filename){
     }
 
     modules[fd].generated_path = strdup(generated_path);
+    modules[fd].header_path = NULL;
     free(generated_path);
     yyset_in(fdopen(fd, "rb"), scanner);
     yyset_out(out, scanner);
@@ -177,11 +271,13 @@ module * module_parse(const char * filename){
 
     chdir(cwd); // return to where we were before
 
-    module * m = malloc(sizeof(module));
+    m = malloc(sizeof(module));
     memcpy(m, &modules[fd], sizeof(module));
 
+    HASH_ADD_STR(module_cache, abs_path, m);
+    fclose(out);
     free(fname);
-    free(original_name);
+    /*free(original_name);*/
     return m;
 }
 
@@ -189,7 +285,7 @@ void module_unalias(FILE*current, const char * line){
     module * m = &modules[fileno(current)];
     import_t * imports = m->imports;
     char * sep = strchr(line, '.');
-    char * alias = "";
+    char * alias = NULL;
     if (sep){
         size_t alias_len = sep - line + 1;
         alias = malloc(alias_len);
@@ -199,19 +295,28 @@ void module_unalias(FILE*current, const char * line){
         if (imports != NULL){
             HASH_FIND_STR(imports, alias, import);
         }
+        free(alias);
         if (import && import->module && import->module->name){
             sep++;
             //TODO: check to ensure export exists
-            fprintf(m->out, "%s_%s", import->module->name, sep);
+            char * unaliased = malloc(strlen(import->module->name) + strlen(sep) + 2);
+            sprintf(unaliased, "%s_%s", import->module->name, sep);
+            if (recording && c_stmt.type == EXPORT){
+               printf("module %s exports %s\n", m->name, unaliased); 
+            }
+            module_export_declaration(current, unaliased);
+            free(unaliased);
             return;
         }
     }
     fprintf(m->out,"%s",line);
+#ifdef DEBUG
+    printf("%s",line);
+#endif
 }
 
 void module_name(FILE*current, const char * line){
     module * m = &modules[fileno(current)];
-    import_t * imports = m->imports;
 
     const char * end = line + strlen(line);
     while(end > line && *end != '"') end--;
@@ -229,9 +334,9 @@ void module_name(FILE*current, const char * line){
 }
 
 void module_count(FILE* current, int add, int type, const char * line){
-    module * m = &modules[fileno(current)];
+    /*module * m = &modules[fileno(current)];*/
 
-    if (add > 0 && type == 0 && c_stmt.type == EXPORT){
+    if (add > 0 && type == 0 && c_stmt.type == EXPORT && level[1] == 0){
         c_stmt.export.is_function = 1;
         if (c_stmt.export.name == NULL){
             c_stmt.export.name = c_stmt.export.tokens[c_stmt.export.num_tokens - 1];
@@ -246,8 +351,6 @@ void module_count(FILE* current, int add, int type, const char * line){
 }
 
 void module_export_start(FILE*current, const char * line){
-    module * m = &modules[fileno(current)];
-    import_t * imports = m->imports;
     memset(&c_stmt, 0, sizeof(c_stmt));
     c_stmt.type = EXPORT;
     c_stmt.export.num_tokens = 0;
@@ -258,7 +361,6 @@ void module_export_start(FILE*current, const char * line){
 
 void module_export_try_end(FILE*current, const char * line){
     module * m = &modules[fileno(current)];
-    import_t * imports = m->imports;
 
 
     if (recording && level[1] == 0 && c_stmt.type == EXPORT){
@@ -270,9 +372,11 @@ void module_export_try_end(FILE*current, const char * line){
         export_t * e = malloc(sizeof(export_t));
 
         e->name = c_stmt.export.name;
+        e->type = c_stmt.export.type;
 
         e->declaration = malloc(c_stmt.export.tokens_length + strlen(m->name) + 3);
         e->declaration[0] = '\0';
+
         int i;
         for (i = 0; i < c_stmt.export.num_tokens; i++){
             if ( c_stmt.export.tokens[i] == c_stmt.export.name){
@@ -285,6 +389,9 @@ void module_export_try_end(FILE*current, const char * line){
             }
         }
         fprintf(m->out,"%s%s",e->declaration, line);
+#ifdef DEBUG
+        printf("%s%s",e->declaration, line);
+#endif
         strcat(e->declaration, ";");
         HASH_ADD_STR(m->exports, name, e);
     } else {
@@ -308,6 +415,17 @@ void module_ID(FILE*current, const char * line){
     }
 }
 
+void module_export_type(FILE* current, const char * line, enum export_type type){
+    if (recording){
+        if (c_stmt.type == EXPORT){
+            if (c_stmt.export.type == 0){
+                c_stmt.export.type = type;
+            }
+        }
+    }
+    module_export_declaration(current, line);
+}
+
 void module_export_declaration(FILE* current, const char * line){
     if (recording){
         if (c_stmt.type == EXPORT){
@@ -319,5 +437,8 @@ void module_export_declaration(FILE* current, const char * line){
     } else {
         module * m = &modules[fileno(current)];
         fprintf(m->out, "%s", line);
+#ifdef DEBUG
+        printf("%s", line);
+#endif
     }
 }

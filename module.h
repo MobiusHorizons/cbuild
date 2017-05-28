@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <uthash.h>
+#include <stdbool.h>
 
 typedef struct module_t module;
 
@@ -14,7 +15,7 @@ typedef struct {
 } import_t;
 
 enum export_type {
-    FUNCTION,
+    VARIABLE = 0,
     TYPE,
     UNION,
     STRUCT,
@@ -22,7 +23,9 @@ enum export_type {
 };
 typedef struct {
     UT_hash_handle hh;
+    char * key;
     char * name;
+    enum export_type type;
     char * declaration;
 } export_t;
 
@@ -34,6 +37,9 @@ struct module_t {
     char * abs_path;
     FILE * out;
     char * generated_path;
+    char * header_path;
+    bool verbose;
+    bool is_exported;
 };
 
 enum statement {
@@ -44,12 +50,15 @@ typedef struct{
     enum statement type;
     union {
         struct{
+            char * key;
             char * name;
             char * declaration;
             char ** tokens;
             size_t num_tokens;
             size_t tokens_length;
             int is_function;
+            int is_struct;
+            enum export_type type;
         } export;
     };
 } statement_t;
@@ -63,6 +72,7 @@ void module_imports(FILE* current, const char * line);
 void module_unalias(FILE* current, const char * line);
 void module_name(FILE*current, const char * line);
 void module_exports(FILE* current, const char * line, enum export_type type);
+void module_export_type(FILE* current, const char * line, enum export_type type);
 void module_export_start(FILE* current, const char * line);
 char * module_prefix (FILE* current, const char * line);
 void module_export_try_end(FILE*current, const char * line);
@@ -71,6 +81,6 @@ void module_count(FILE*current,int, int, const char * line);
 void module_ID(FILE*current, const char * line);
 void module_export_declaration(FILE* current, const char * line);
 
-module * module_parse(const char * filename);
+module * module_parse(const char * filename, bool verbose);
 
 #endif
