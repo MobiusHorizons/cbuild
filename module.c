@@ -50,7 +50,6 @@ char * relative(const char * from, const char * to){
     strcat(rel, "../");
   }
   strcat(rel, &to[last_sep + 1]);
-  printf("rel = '%s'\n", rel);
   return rel;
 }
 
