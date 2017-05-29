@@ -43,20 +43,18 @@ as `a.do();`
 
 ### Syntax:
 ```javascript
-export do;
-void do(void){
+export void do(void){
   ...
 }
 ```
 
 ### Description
-The `export` declaration must occur before the symbol is defined
-in the `c` file. Running `export` on a symbol prefixes it with
+Running `export` on a symbol prefixes it with
 the module's namespace prefix (currently based on the filename).
 
 ### Generated Syntax
 
-`void do(void){` -> `void awesome_do(void{`
+`export void do(void){` -> `void awesome_do(void){`
 
 
 # Build Instructions:
@@ -86,11 +84,12 @@ the `root module` is the source for either an executable or library you would li
 `.mk` file which specifies the depencencies between all the generated files and their respective objects, it also
 contains a rule to build either a shared library or an executable for modules where the name is `main`.
 
-
+To run the compilitation based on the makefile, simply run `make -f <root>.mk <root>` where `<root>` refers to the base
+name of the root module. 
 ## flags
 
-* `-m` if this flag is specified, `mpp` calls `make -m <root>.mk <root>` which compiles the generated files according to
-  the generated makefile.
+* `-m` if this flag is specified, `mpp` calls `make -f <root>.mk <root>` which compiles the generated files according to
+  the generated makefile. (currently not working on linux)
 
 * `-v` verbose mode. This prints out debug information, and is primarily for use during the development of the `mpp`
   tool.
