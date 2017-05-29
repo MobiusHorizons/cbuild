@@ -4,6 +4,8 @@
 #include <libgen.h>
 #include <limits.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 char cwd_buffer[PATH_MAX];
 char path_buffer[PATH_MAX];

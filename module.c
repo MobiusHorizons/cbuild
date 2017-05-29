@@ -41,12 +41,16 @@ char * relative(const char * from, const char * to){
   }
   int dots = count_levels(&from[last_sep +1]);
 
-  char * rel = malloc(dots * 3 + strlen(&to[last_sep]));
+  char * rel = malloc(dots == 0 ? 2 : (dots * 3) + strlen(&to[last_sep]));
   rel[0] = 0;
+  if (dots == 0){
+      strcat(rel, "./");
+  }
   while (dots--){
     strcat(rel, "../");
   }
   strcat(rel, &to[last_sep + 1]);
+  printf("rel = '%s'\n", rel);
   return rel;
 }
 
@@ -70,7 +74,7 @@ const char* type_names[] = {
 static void write_headers(module * dep, module * m){
     if (dep->header_path == NULL){
         char * header_path = relative(m->abs_path, dep->abs_path); 
-        char * ext = index(header_path, '.');
+        char * ext = index(basename(header_path), '.');
         if (ext){
             *ext = '\0';
         }
