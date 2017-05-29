@@ -51,7 +51,8 @@ static char * walk_dependencies(module * m, FILE* out, char * objects){
         *ext = '\0';
     }
 
-    objects = realloc(objects, strlen(path_buffer) + 3);
+    objects = realloc(objects, strlen(objects) + strlen(path_buffer) + strlen(" .o") + 1);
+
     strcat(objects, " ");
     strcat(objects, path_buffer);
     strcat(objects, ".o");
@@ -141,6 +142,8 @@ int main(int argc, char **argv){
 
     }
     fclose(makefile);
+    sync();
+    sync();
 
     if (conf.run_make){
         pid_t p = fork();
@@ -151,6 +154,7 @@ int main(int argc, char **argv){
             execlp("make", "make", "-f", basename(makefile_path), libname, NULL);
         }
     }
+    free(libname);
     free(makefile_path);
     free(cwd);
     free(objects);

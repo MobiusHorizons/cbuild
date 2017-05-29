@@ -41,10 +41,10 @@ char * relative(const char * from, const char * to){
   }
   int dots = count_levels(&from[last_sep +1]);
 
-  char * rel = malloc(dots == 0 ? 2 : (dots * 3) + strlen(&to[last_sep]));
+  char * rel = malloc((dots == 0 ? 2 : (dots * 3)) + strlen(&to[last_sep]) + 1);
   rel[0] = 0;
   if (dots == 0){
-      strcat(rel, "./");
+      strcpy(rel, "./");
   }
   while (dots--){
     strcat(rel, "../");
@@ -91,7 +91,7 @@ static void write_headers(module * dep, module * m){
     fprintf(m->out, "#include \"%s\"\n", dep->header_path); 
 }
 
-#define GUARDS_HEAD "#ifndef _%s_\n#define _%s_\n"
+#define GUARDS_HEAD "#ifndef _%s_\n#define _%s_\n\n"
 #define GUARDS_FOOT "#endif\n"
 static void enumerate_exports(module * m, FILE* out){
     /*fprintf(stderr, "EXPORTS for '%s'\n", m->abs_path);*/
@@ -180,7 +180,7 @@ char * module_prefix(FILE* current, const char * line){
         HASH_FIND_STR(m->exports, line, e);
         if (e && m->name){
             if (recording){
-                char * out = malloc(strlen(m->name) + strlen(line) + 1);
+                char * out = malloc(strlen(m->name) + strlen(line) + 2);
                 strcpy(out, m->name);
                 strcat(out, "_");
                 strcat(out, line);
@@ -267,7 +267,9 @@ module * module_parse(const char * filename, bool verbose){
     modules[fd].generated_path = strdup(generated_path);
     modules[fd].header_path = NULL;
     free(generated_path);
-    yyset_in(fdopen(fd, "rb"), scanner);
+
+    FILE* in = fdopen(fd, "rb");
+    yyset_in(in, scanner);
     yyset_out(out, scanner);
     modules[fd].out = out;
     yylex(scanner);
@@ -279,6 +281,7 @@ module * module_parse(const char * filename, bool verbose){
     memcpy(m, &modules[fd], sizeof(module));
 
     HASH_ADD_STR(module_cache, abs_path, m);
+    fclose(in);
     fclose(out);
     free(fname);
     /*free(original_name);*/
@@ -355,6 +358,15 @@ void module_count(FILE* current, int add, int type, const char * line){
 }
 
 void module_export_start(FILE*current, const char * line){
+    /* free accumulated tokens */
+    int i;
+    for (i = 0; i < c_stmt.export.num_tokens; i++){
+        free(c_stmt.export.tokens[i]);
+    }
+    free(c_stmt.export.tokens);
+    c_stmt.export.num_tokens = 0;
+    c_stmt.export.tokens = NULL;
+
     memset(&c_stmt, 0, sizeof(c_stmt));
     c_stmt.type = EXPORT;
     c_stmt.export.num_tokens = 0;
@@ -375,7 +387,7 @@ void module_export_try_end(FILE*current, const char * line){
         recording = 0;
         export_t * e = malloc(sizeof(export_t));
 
-        e->name = c_stmt.export.name;
+        e->name = strdup(c_stmt.export.name);
         e->type = c_stmt.export.type;
 
         e->declaration = malloc(c_stmt.export.tokens_length + strlen(m->name) + 3);
@@ -388,9 +400,7 @@ void module_export_try_end(FILE*current, const char * line){
                 strcat(e->declaration, "_");
             }
             strcat(e->declaration, c_stmt.export.tokens[i]);
-            if ( c_stmt.export.tokens[i] != c_stmt.export.name){
-                free(c_stmt.export.tokens[i]);
-            }
+            free(c_stmt.export.tokens[i]);
         }
         fprintf(m->out,"%s%s",e->declaration, line);
 #ifdef DEBUG
@@ -398,6 +408,9 @@ void module_export_try_end(FILE*current, const char * line){
 #endif
         strcat(e->declaration, ";");
         HASH_ADD_STR(m->exports, name, e);
+        free(c_stmt.export.tokens);
+        c_stmt.export.num_tokens = 0;
+        c_stmt.export.tokens = NULL;
     } else {
         module_export_declaration(current, line);
     }
@@ -414,8 +427,9 @@ void module_ID(FILE*current, const char * line){
         c_stmt.export.tokens[c_stmt.export.num_tokens - 1] = strdup(token);
         c_stmt.export.tokens_length += strlen(token);
         /*fprintf(stderr, "ID: %s, (%lu, %lu)\n", c_stmt.export.tokens[c_stmt.export.num_tokens-1], c_stmt.export.num_tokens, c_stmt.export.tokens_length);*/
+        free(token);
     } else {
-        module_prefix(current, line);
+        free(module_prefix(current, line));
     }
 }
 
