@@ -7,7 +7,9 @@ This project is an attempt to create a preprocessor for `C` that
 adds some features for easier modularity. These include:
 
 * [x] Automatic namespacing for imports
-* [ ] Automatic header generation (currently no headers, just injects the file)
+* [x] Automatic header generation 
+* [ ] Automatic passthrough exports (export types used in an export)
+* [ ] Specify build flags
 * More as I think of them...
 
 # Syntax:
@@ -77,10 +79,18 @@ this will generate the `mpp` binary.
 
 # Usage:
 
-At this point `mpp` takes a file as input, and outputs to
-`stdout`. To compile a file `test.c` with `mpp` and `gcc`, run
-the following:
+`mpp (-m | -f) <root module>`
 
-```sh
-mpp test.c | gcc -x c - -o test
-```
+the `root module` is the source for either an executable or library you would like to turn into a c project. 
+`mpp` generates a `.c` and `.h` file for each module in the depencency tree of `root module`. Furthermore it generates a
+`.mk` file which specifies the depencencies between all the generated files and their respective objects, it also
+contains a rule to build either a shared library or an executable for modules where the name is `main`.
+
+
+## flags
+
+* `-m` if this flag is specified, `mpp` calls `make -m <root>.mk <root>` which compiles the generated files according to
+  the generated makefile.
+
+* `-v` verbose mode. This prints out debug information, and is primarily for use during the development of the `mpp`
+  tool.
