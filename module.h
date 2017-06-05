@@ -29,6 +29,12 @@ typedef struct {
     char * declaration;
 } export_t;
 
+struct variable {
+    UT_hash_handle hh;
+    char * name;
+    char * value;
+};
+
 struct module_t {
     UT_hash_handle hh;
     import_t * imports;
@@ -38,6 +44,7 @@ struct module_t {
     FILE * out;
     char * generated_path;
     char * header_path;
+    struct variable * variables;
     bool verbose;
     bool is_exported;
 };
@@ -80,6 +87,8 @@ void module_export_try_end(FILE*current, const char * line);
 void module_count(FILE*current,int, int, const char * line);
 void module_ID(FILE*current, const char * line);
 void module_export_declaration(FILE* current, const char * line);
+
+void module_build_set(FILE*current, const char * line);
 
 module * module_parse(const char * filename, bool verbose);
 

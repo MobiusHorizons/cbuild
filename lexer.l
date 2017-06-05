@@ -31,6 +31,10 @@ package{SEP}({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+{SEP}?;	{
     module_name(yyin, yytext);
 }
 
+build{SEP}set{SEP}{ID}{SEP}\"([^"\\\n]|{ES})*\"; {
+    module_build_set(yyin, yytext);
+}
+
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+	{ 
   fprintf(yyout, "%s",yytext);
 }

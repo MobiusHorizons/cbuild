@@ -31,6 +31,11 @@ static void print_dependencies(module * m, FILE* out){
         *ext = '\0';
     }
 
+    struct variable *v;
+    for (v = &m->variables[0]; v != NULL; v = v->hh.next){
+        fprintf(out, "%s += \"%s\"\n", v->name, v->value);
+    }
+
     fprintf(out, "%s.o: %s\n\n", path_buffer, m->generated_path + prefix_len);
 
 }
@@ -142,8 +147,8 @@ int main(int argc, char **argv){
 
     }
     fclose(makefile);
-    sync();
-    sync();
+    /*sync();*/
+    /*sync();*/
 
     if (conf.run_make){
         pid_t p = fork();

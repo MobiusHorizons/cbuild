@@ -459,3 +459,34 @@ void module_export_declaration(FILE* current, const char * line){
 #endif
     }
 }
+
+
+void module_build_set(FILE*current, const char * line){
+    module * m = &modules[fileno(current)];
+    struct variable * v = malloc(sizeof(struct variable));
+    const char * end = line + strlen(line);
+
+    const char * name = line;
+    name += strlen("build");
+    while(name < end && isspace(*name)) name++;
+    name += strlen("set");
+    while(name < end && isspace(*name)) name++;
+    const char * name_end = name;
+    while(name_end < end && !isspace(*name_end)) name_end++;
+    
+    v->name = malloc(name_end - name + 1);
+    strncpy(v->name, name, name_end - name);
+    v->name[name_end - name] = '\0';
+
+    while(end > line && *end != '"') end--;
+
+    const char * value = end - 1;
+    while(value > line && *value != '"') value--;
+    value++;
+
+    v->value = malloc(end - value + 1);
+    strncpy(v->value, value, end - value);
+    v->value[end - value] = '\0';
+
+    HASH_ADD_STR(m->variables, name, v);
+}
