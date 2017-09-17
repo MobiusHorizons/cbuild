@@ -121,7 +121,7 @@ static char * walk_dependencies(module * m, FILE* out, char * objects, module * 
     return objects;
 }
 
-void write_headers(module * root, char * path){
+void write_headers(module * root, const char * path){
     char * header_path = strdup(path);
     char * ext = index(header_path, '.');
     if (ext){
@@ -201,19 +201,19 @@ int main(int argc, char **argv){
         }
 
     }
-
     fprintf(makefile, "\nCLEAN_%s:\n", libname);
     fprintf(makefile, "\trm -rf %s %s\n", libname, objects);
     fclose(makefile);
-    /*sync();*/
-    /*sync();*/
 
     if (conf.run_make){
         pid_t p = fork();
         if (p){
             wait(NULL);
         } else {
-            chdir(dirname(makefile_path));
+            char * makefile_dir = dirname(strdup(makefile_path));
+            chdir(makefile_dir);
+            free(makefile_dir);
+
             execlp("make", "make", "-f", basename(makefile_path), libname, NULL);
         }
     }
