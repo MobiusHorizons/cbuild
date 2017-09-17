@@ -6,9 +6,10 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "./relative.h"
 
 char cwd_buffer[PATH_MAX];
-char path_buffer[PATH_MAX];
+/*char path_buffer[PATH_MAX];*/
 char * cwd;
 
 struct config {
@@ -16,51 +17,105 @@ struct config {
     bool run_make;
 };
 
-static void print_dependencies(module * m, FILE* out){
-    size_t prefix_len = strlen(cwd) + 1;
-    fprintf(out, "# dependencies for %s\n", m->abs_path + prefix_len);
-
-    /*fprintf(out, "%s: %s\n", m->generated_path, m->abs_path + prefix_len);*/
-    /*fprintf(out, "\t mpp %s\n\n", m->abs_path + prefix_len);*/
-
+static char * variable_operators[] = {
+    ":=",
+    "?=",
+    "+=",
+    "=",
+};
+static void print_dependencies(module * m, FILE* out, module * root){
     import_t * i;
 
-    strcpy(path_buffer, m->generated_path + prefix_len);
-    char * ext = rindex(path_buffer, '.');
+    char * rel_path = relative(root->abs_path, m->generated_path); 
+    fprintf(out, "# dependencies for %s\n", rel_path);
+
+
+    char * object_path = strdup(rel_path);
+    char * ext = index(basename(object_path), '.');
     if (ext){
-        *ext = '\0';
+        object_path[strlen(object_path) - strlen(ext)] = '\0';
     }
 
     struct variable *v;
     for (v = &m->variables[0]; v != NULL; v = v->hh.next){
-        fprintf(out, "%s += \"%s\"\n", v->name, v->value);
+        fprintf(out, "%s %s %s\n", v->name, variable_operators[v->type], v->value);
     }
 
-    fprintf(out, "%s.o: %s\n\n", path_buffer, m->generated_path + prefix_len);
+    fprintf(out, "%s.o: %s", object_path, rel_path);
 
+    free(rel_path);
+    for (i = &m->imports[0]; i != NULL; i = i->hh.next){
+        switch(i->type){
+            case module_import:
+                if (i->module && i->module->header_path){
+                    rel_path = relative(root->abs_path, i->module->header_path);
+                    fprintf(out, " %s", rel_path);
+                    free(rel_path);
+                }
+                break;
+            case c_file:
+                rel_path = relative(root->abs_path, i->file);
+                fprintf(out, " %s", rel_path);
+                free(rel_path);
+                break;
+            default:
+            break;
+        }
+    }
+    fprintf(out, "\n\n");
+
+    free(object_path);
 }
 
-static char * walk_dependencies(module * m, FILE* out, char * objects){
-    if (m->is_exported) return objects;
+static char * c_dependency(import_t * i, FILE* out, char * objects, module * root){
+    if (i->type != c_file) return objects;
 
-    size_t prefix_len = strlen(cwd) + 1;
-    print_dependencies(m, out);
-    import_t * i;
-    for (i = &m->imports[0]; i != NULL; i = i->hh.next){
-        objects = walk_dependencies(i->module, out, objects);
-    }
+    char * rel_path = relative(root->abs_path, i->file); 
+    fprintf(out, "# dependencies for %s\n", rel_path);
 
-    strcpy(path_buffer, m->generated_path + prefix_len);
-    char * ext = rindex(path_buffer, '.');
+
+    char * object_path = strdup(rel_path);
+    char * ext = index(basename(object_path), '.');
     if (ext){
-        *ext = '\0';
+        object_path[strlen(object_path) - strlen(ext)] = '\0';
     }
 
-    objects = realloc(objects, strlen(objects) + strlen(path_buffer) + strlen(" .o") + 1);
+    fprintf(out, "%s.o: %s %s.h", object_path, rel_path, object_path);
+    objects = realloc(objects, strlen(objects) + strlen(object_path) + strlen(" .o") + 1);
 
     strcat(objects, " ");
-    strcat(objects, path_buffer);
+    strcat(objects, object_path);
     strcat(objects, ".o");
+    free(object_path);
+    return objects;
+}
+
+static char * walk_dependencies(module * m, FILE* out, char * objects, module * root){
+    if (m == NULL || m->is_exported) return objects;
+
+    print_dependencies(m, out, root);
+    import_t * i;
+    for (i = &m->imports[0]; i != NULL; i = i->hh.next){
+        if (i->type == module_import){
+            objects = walk_dependencies(i->module, out, objects, root);
+        } else if (i->type == c_file){
+            objects = c_dependency(i, out, objects, root);
+        }
+    }
+
+    char * object_path = relative(root->abs_path, m->generated_path); 
+    char * ext = index(basename(object_path), '.');
+    if (ext){
+        object_path[strlen(object_path) - strlen(ext)] = '\0';
+    }
+    
+
+    objects = realloc(objects, strlen(objects) + strlen(object_path) + strlen(" .o") + 1);
+
+    strcat(objects, " ");
+    strcat(objects, object_path);
+    strcat(objects, ".o");
+    free(object_path);
 
     m->is_exported = true;
     return objects;
@@ -115,9 +170,9 @@ int main(int argc, char **argv){
     cwd = strdup(dirname(cwd_buffer));
 
     char * libname = strdup(root->abs_path + strlen(cwd) + 1);
-    char * ext = index(libname, '.');
+    char * ext = index(basename(libname), '.');
     if (ext){
-        *ext = '\0';
+        libname[strlen(libname) - strlen(ext)] = '\0';
     }
 
     char * makefile_path = malloc(strlen(root->abs_path) + 3);
@@ -131,11 +186,11 @@ int main(int argc, char **argv){
     strcat(makefile_path, ".mk");
     FILE* makefile = fopen(makefile_path, "w");
 
-    char * objects = walk_dependencies(root, makefile, strdup(""));
+    char * objects = walk_dependencies(root, makefile, strdup(""), root);
 
     if (strcmp(root->name, "main") == 0){
         fprintf(makefile, "%s:%s\n", libname, objects);
-        fprintf(makefile, "\t$(CC) %s -o %s\n", objects, libname);
+        fprintf(makefile, "\t$(CC) $(CFLAGS) $(LDFLAGS) %s -o %s\n", objects, libname);
     } else {
         strcat(libname, ".a");
         fprintf(makefile, "%s:%s\n", libname, objects);
@@ -146,6 +201,9 @@ int main(int argc, char **argv){
         }
 
     }
+
+    fprintf(makefile, "\nCLEAN_%s:\n", libname);
+    fprintf(makefile, "\trm -rf %s %s\n", libname, objects);
     fclose(makefile);
     /*sync();*/
     /*sync();*/

@@ -15,8 +15,8 @@ mpp-test : mpp test/test.c test/list.c
 	./mpp test/test.c | $(CC) -o ./mpp-test -x c -
 	./mpp-test
 
-mpp : main.c $(DEPS_SRC) lexer.o module.o module.h
-	$(CC) -o mpp $(CCFLAGS) main.c $(DEPS_SRC) module.o lexer.o
+mpp : main.c $(DEPS_SRC) lexer.o module.o module.h relative.o relative.h
+	$(CC) -o mpp $(CCFLAGS) main.c $(DEPS_SRC) module.o lexer.o relative.o
 	#./mpp test/test.c > /dev/null
 
 %.o : %.c %.h Makefile
