@@ -164,10 +164,17 @@ char * module_prefix(FILE* current, const char * line){
 }
 
 static int newer(struct stat a, struct stat b){
+#ifdef __MACH__
     if (a.st_mtimespec.tv_sec == b.st_mtimespec.tv_sec) {
         return a.st_mtimespec.tv_nsec > b.st_mtimespec.tv_nsec;
     }
     return a.st_mtimespec.tv_sec > b.st_mtimespec.tv_sec;
+#else
+    if (a.st_mtim.tv_sec == b.st_mtim.tv_sec) {
+        return a.st_mtim.tv_nsec > b.st_mtim.tv_nsec;
+    }
+    return a.st_mtim.tv_sec > b.st_mtim.tv_sec;
+#endif
 }
 
 module * module_parse(const char * filename, bool verbose){
