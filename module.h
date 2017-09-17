@@ -2,7 +2,7 @@
 #define __MODULE_H_
 
 #include <stdio.h>
-#include <uthash.h>
+#include <uthash/uthash.h>
 #include <stdbool.h>
 
 typedef struct module_t module;
