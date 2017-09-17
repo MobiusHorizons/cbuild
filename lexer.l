@@ -35,7 +35,7 @@ package{SEP}({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+{SEP}?;	{
     module_name(yyin, yytext);
 }
 
-build{SEP}depends{SEP}{ID}{SEP}{FILENAME}{SEP}?; {
+build{SEP}depends{SEP}{FILENAME}{SEP}?; {
     module_build_depends(yyin, yytext);
 }
 

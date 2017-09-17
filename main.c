@@ -80,7 +80,7 @@ static char * c_dependency(import_t * i, FILE* out, char * objects, module * roo
         object_path[strlen(object_path) - strlen(ext)] = '\0';
     }
 
-    fprintf(out, "%s.o: %s %s.h", object_path, rel_path, object_path);
+    fprintf(out, "%s.o: %s %s.h\n\n", object_path, rel_path, object_path);
     objects = realloc(objects, strlen(objects) + strlen(object_path) + strlen(" .o") + 1);
 
     strcat(objects, " ");

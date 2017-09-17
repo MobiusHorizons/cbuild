@@ -592,15 +592,19 @@ void module_build_depends(FILE*current, const char * line){
     while(filename_end > filename && (*filename_end != '"')) filename_end--;
     size_t length = filename_end - filename;
 
-    char * alias = (char*)malloc(length + 1);
-    strncpy(alias, filename, length);
-    alias[length] = '\0';
+    char * local = (char*)malloc(length + 1);
+    strncpy(local, filename, length);
+    local[length] = '\0';
+
+    char * abs_path = realpath(local, NULL);
 
     import_t * import = malloc(sizeof(import_t));
     import->type   = c_file;
-    import->alias  = alias;
-    import->file   = alias;
+    import->alias  = abs_path;
+    import->file   = abs_path;
     import->module = NULL;
+
+    free(local);
 
     HASH_ADD_STR(m->imports, alias, import);
 }
