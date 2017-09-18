@@ -649,9 +649,13 @@ void module_build_set(FILE*current, const char * line){
 
 void module_export_fp(FILE* current, const char * line){
     if (recording){
+        /*printf("%s: type = %s\n", line, type_names[c_stmt.export.type]);*/
         if (
             c_stmt.type == EXPORT && 
-            c_stmt.export.type == VARIABLE && 
+            (
+             c_stmt.export.type == VARIABLE ||
+             c_stmt.export.type == TYPE
+            ) && 
             c_stmt.export.name == NULL
         ){
             // determine name
