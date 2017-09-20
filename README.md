@@ -8,8 +8,8 @@ adds some features for easier modularity. These include:
 
 * [x] Automatic namespacing for imports
 * [x] Automatic header generation 
-* [ ] Automatic passthrough exports (export types used in an export)
-* [ ] Specify build flags
+* [x] Automatic passthrough exports (export types used in an export)
+* [x] Specify build flags
 * More as I think of them...
 
 # Syntax:
@@ -26,7 +26,7 @@ import a from "./awesome.c";
 ```
 
 ### Description
-All the exported functions from `awesome.c` are now available
+All the exported functions/types from `awesome.c` are now available
 under the namespace `a`. So if the function `void do(void);` is
 exported from `awesome.c`, after the above import, it can be used
 as `a.do();`
@@ -57,10 +57,41 @@ the module's namespace prefix (currently based on the filename).
 `export void do(void){` -> `void awesome_do(void){`
 
 
+## Build Options
+> Change the generated makefile.
+
+### Syntax:
+```
+/* Set variables in the Makefile */
+build set VAR "VALUE"
+build add CFLAGS "-g"
+build set default LIBRARY_INCLUDE_DIR "/path/to/default"
+
+/* Depend on external c files */
+build depends "/path/to/some/file.c"
+```
+
+### Description
+`build (set | set default | add) NAME "VALUE"` will use `:=`, `?=`, `+=` respectively to set the variables in the
+generated makefile whenever the module is included in the build.
+
+`build depends "file.c"` adds `file.c` to the dependency tree whenever the module is imported. It will be added to the
+generated makefile, so you can still just build your whole project with `mpp -m root.modul.c`
+
+### Generated Syntax
+the example above would result in the following lines being added to the generated makefile.
+```make
+VAR := "VALUE"
+CFLAGS += "-g"
+LIBRARY_INCLUDE_DIR ?= "/path/to/default"
+```
+
+`build depends` will add the `file.o` to the dependencies of the current module, so it will be included in the build of
+the final executable.
+
 # Build Instructions:
 
-The project probably works on all `posix` based systems, however
-it has only been tested on OSX.
+The project probably works on all `posix` based systems. It has been tested on `OSX`, `Linux`, and `FreeBSD`.
 
 ## Dependencies:
 * `flex`
