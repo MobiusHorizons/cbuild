@@ -1,0 +1,9 @@
+{
+  "name": "modulate",
+  "version": "0.1.0",
+  "repo": "MobiusHorizons/ModularC",
+  "description": "Modular C preprocessor and builder.",
+  "keywords": ["modular", "C", "preprocessor"],
+  "license": "MIT",
+  "install": "make install"
+}
