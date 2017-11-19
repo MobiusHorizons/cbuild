@@ -68,6 +68,7 @@ struct module_t {
     bool              verbose;
     bool              is_exported;
     bool              is_write;
+    bool              parse_only;
 };
 
 enum statement {
@@ -122,6 +123,6 @@ void module_platform_finish(FILE*current, const char * line);
 void module_build_depends(FILE*current, const char * line);
 void module_build_variable(FILE*current, const char * line, enum variable_type type);
 
-module * module_parse(const char * filename, bool verbose);
+module * module_parse(const char * filename, bool verbose, bool parse_only);
 
 #endif

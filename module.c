@@ -127,7 +127,7 @@ void module_imports(FILE*current, const char * line){
     module * m = &modules[fileno(current)];
     import_t * imports = m->imports;
     import_t * import = parse_import(imports, line);
-    import->module = module_parse(import->file, m->verbose);
+    import->module = module_parse(import->file, m->verbose, m->parse_only);
     write_headers(import->module, m);
     char * header_path = relative(m->abs_path, import->module->header_path);
     if(m->is_write) fprintf(m->out, "#include \"%s\"\n", header_path); 
@@ -177,7 +177,7 @@ static int newer(struct stat a, struct stat b){
 #endif
 }
 
-module * module_parse(const char * filename, bool verbose){
+module * module_parse(const char * filename, bool verbose, bool parse_only){
     char * abs_path = realpath(filename, NULL);
     /*printf("%s\n", abs_path);*/
 
@@ -249,7 +249,7 @@ module * module_parse(const char * filename, bool verbose){
         strcat(generated_path, ".c");
         if (strcmp(generated_path, abs_path) != 0){
             struct stat out_stat;
-            if (stat(generated_path, &out_stat) == 0 && !newer(source_stat, out_stat)) {
+            if (parse_only || (stat(generated_path, &out_stat) == 0 && !newer(source_stat, out_stat))) {
                 out = fopen("/dev/null", "a");
                 modules[fd].is_write = false;
             } else {
@@ -264,7 +264,7 @@ module * module_parse(const char * filename, bool verbose){
         *ext = '\0';
         strcat(generated_path, ".generated.c");
         struct stat out_stat;
-        if (stat(generated_path, &out_stat) == 0 && !newer(source_stat, out_stat)) {
+        if (parse_only || (stat(generated_path, &out_stat) == 0 && !newer(source_stat, out_stat))) {
             out = fopen("/dev/null", "a");
             modules[fd].is_write = false;
         } else {
@@ -275,6 +275,7 @@ module * module_parse(const char * filename, bool verbose){
 
     modules[fd].generated_path = strdup(generated_path);
     modules[fd].header_path = NULL;
+    modules[fd].parse_only = parse_only;
     free(generated_path);
 
     FILE* in = fdopen(fd, "rb");
@@ -427,7 +428,7 @@ module * export_module(module * m, char * alias){
     import->alias  = alias;
     import->file   = alias;
     import->type   = module_import;
-    import->module = module_parse(import->file, m->verbose);
+    import->module = module_parse(import->file, m->verbose, m->parse_only);
 
     write_headers(import->module, m);
     HASH_ADD_STR(m->imports, alias, import);
@@ -461,7 +462,7 @@ void module_export_exports(module * m, char * alias){
     import->alias  = alias;
     import->file   = alias;
     import->type   = module_import;
-    import->module = module_parse(import->file, m->verbose);
+    import->module = module_parse(import->file, m->verbose, m->parse_only);
 
     write_headers(import->module, m);
     HASH_ADD_STR(m->imports, alias, import);

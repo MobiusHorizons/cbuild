@@ -15,6 +15,20 @@ char * cwd;
 struct config {
     bool verbose;
     bool run_make;
+    bool free;
+    bool parse_only;
+};
+
+enum command {
+    cmd_build = 0,
+    cmd_generate,
+    cmd_clean,
+};
+
+struct generate {
+    module * root;
+    char   * makefile_path;
+    char   * libname;
 };
 
 static char * variable_operators[] = {
@@ -23,6 +37,7 @@ static char * variable_operators[] = {
     "+=",
     "=",
 };
+
 static void print_dependencies(module * m, FILE* out, module * root){
     import_t * i;
 
@@ -142,16 +157,169 @@ void write_headers(module * root, const char * path){
     fclose(header);
 }
 
+struct generate generate(struct config conf, const char * root_file) {
+  module * root = module_parse(root_file, conf.verbose, conf.parse_only);
+  strcpy(cwd_buffer, root->abs_path);
+  cwd = strdup(dirname(cwd_buffer));
+
+  char * libname = strdup(root->abs_path + strlen(cwd) + 1);
+  char * ext = index(basename(libname), '.');
+  if (ext){
+      libname[strlen(libname) - strlen(ext)] = '\0';
+  }
+
+  char * makefile_path = malloc(strlen(root->abs_path) + 3);
+  strcpy(makefile_path, root->abs_path);
+
+  ext = index(makefile_path, '.');
+  if (ext){
+      *ext = '\0';
+  }
+
+  strcat(makefile_path, ".mk");
+  FILE* makefile = fopen(makefile_path, "w");
+
+  char * objects = walk_dependencies(root, makefile, strdup(""), root);
+
+  if (strcmp(root->name, "main") == 0){
+      fprintf(makefile, "%s:%s\n", libname, objects);
+      fprintf(makefile, "\t$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) %s -o %s\n", objects, libname);
+  } else {
+      strcat(libname, ".a");
+      fprintf(makefile, "%s:%s\n", libname, objects);
+      fprintf(makefile, "\tar rcs $@ $^\n");
+
+      if (root->exports){
+          write_headers(root, makefile_path);
+      }
+
+  }
+  fprintf(makefile, "\nCLEAN_%s:\n", libname);
+  fprintf(makefile, "\trm -rf %s %s\n", libname, objects);
+  fclose(makefile);
+  free(objects);
+
+  if (conf.free){
+      free(libname);
+      free(makefile_path);
+
+      struct generate paths = {0};
+      return paths;
+  }
+
+  struct generate paths = {
+      .root          = root,
+      .libname       = libname,
+      .makefile_path = makefile_path,
+  };
+
+  return paths;
+}
+
+int build(struct config conf, const char * root_file) {
+    struct generate paths = generate(conf, root_file);
+
+    pid_t p = fork();
+    if (p){
+        wait(NULL);
+    } else {
+        char * makefile_dir = dirname(strdup(paths.makefile_path));
+        chdir(makefile_dir);
+        free(makefile_dir);
+
+        execlp("make", "make", "-f", basename(paths.makefile_path), paths.libname, NULL);
+    }
+
+
+    free(paths.libname);
+    free(paths.makefile_path);
+    return 0;
+}
+
+static void clean_recursive(module * m, module * root, bool verbose) {
+    if (m == NULL) return;
+
+    import_t * i;
+    for (i = &m->imports[0]; i != NULL; i = i->hh.next) {
+        if (i->type == module_import){
+            clean_recursive(i->module, root, verbose);
+        }
+    }
+
+    if (m->generated_path) {
+        if (m->header_path){
+            if (verbose) fprintf(stderr, "unlink %s\n", m->header_path);
+            unlink(m->header_path);
+        }
+
+        unlink(m->generated_path);
+        if (verbose) fprintf(stderr, "unlink %s\n", m->generated_path);
+
+        m->generated_path = NULL;
+    }
+}
+
+const char * clean(struct config conf, const char * root_file) {
+    conf.parse_only = true;
+    struct generate paths = generate(conf, root_file);
+
+    pid_t p = fork();
+    if (p){
+        wait(NULL);
+    } else {
+        char * makefile_dir = dirname(strdup(paths.makefile_path));
+        chdir(makefile_dir);
+        free(makefile_dir);
+
+        char * clean_cmd = malloc(strlen(paths.libname + strlen("CLEAN_") + 1));
+        strcpy(clean_cmd, "CLEAN_");
+        strcat(clean_cmd, paths.libname);
+
+        if (conf.verbose){
+            execlp("make", "make", "-f", basename(paths.makefile_path), clean_cmd, NULL);
+        } else {
+            execlp("make", "make", "-s", "-f", basename(paths.makefile_path), clean_cmd, NULL);
+        }
+    }
+
+    clean_recursive(paths.root, paths.root, conf.verbose);
+    unlink(paths.makefile_path);
+
+    free(paths.libname);
+    free(paths.makefile_path);
+
+    return 0;
+}
+
+void usage(const char * name){
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    %s [command] [options] <module>\n", name);
+    fprintf(stderr, "\n    Options:\n\n");
+    {
+        fprintf(stderr, "        -v         verbose\n");
+    }
+    fprintf(stderr, "\n    Commands:\n\n");
+    {
+        fprintf(stderr, "        build      generates source files and builds the module (default)\n");
+        fprintf(stderr, "        generate   generates source files\n");
+        fprintf(stderr, "        clean      clean all generated sources, object files, and executables");
+    }
+    fprintf(stderr, "\n");
+}
+
 int main(int argc, char **argv){
+  const char * executable = argv[0];
   ++argv; --argc;	/* skip over program name */
   char * root_file = NULL;
   struct config conf = {0};
+
+  enum command cmd = cmd_build;
 
   /* parse CLI */
   while( argc > 0){
       if ( argv[0][0] == '-' && strlen(*argv) == 2){
           switch(argv[0][1]) {
-              case 'm':
+              case 'g':
                   conf.run_make = true;
                   break;
               case 'v':
@@ -161,68 +329,37 @@ int main(int argc, char **argv){
                   fprintf(stderr, "Unknown option (%s)\n", *argv);
           }
       } else {
-          root_file = *argv;
+          if (strcmp(*argv, "build") == 0){
+              cmd = cmd_build;
+          } else if (strcmp(*argv, "generate") == 0){
+              cmd = cmd_generate;
+          } else if (strcmp(*argv, "clean") == 0){
+              cmd = cmd_clean;
+          } else {
+              root_file = *argv;
+          }
       }
       argv++; argc--;
   }
 
-  if ( root_file != NULL ){
-    module * root = module_parse(root_file, conf.verbose);
-    strcpy(cwd_buffer, root->abs_path);
-    cwd = strdup(dirname(cwd_buffer));
-
-    char * libname = strdup(root->abs_path + strlen(cwd) + 1);
-    char * ext = index(basename(libname), '.');
-    if (ext){
-        libname[strlen(libname) - strlen(ext)] = '\0';
-    }
-
-    char * makefile_path = malloc(strlen(root->abs_path) + 3);
-    strcpy(makefile_path, root->abs_path);
-
-    ext = index(makefile_path, '.');
-    if (ext){
-        *ext = '\0';
-    }
-
-    strcat(makefile_path, ".mk");
-    FILE* makefile = fopen(makefile_path, "w");
-
-    char * objects = walk_dependencies(root, makefile, strdup(""), root);
-
-    if (strcmp(root->name, "main") == 0){
-        fprintf(makefile, "%s:%s\n", libname, objects);
-        fprintf(makefile, "\t$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) %s -o %s\n", objects, libname);
-    } else {
-        strcat(libname, ".a");
-        fprintf(makefile, "%s:%s\n", libname, objects);
-        fprintf(makefile, "\tar rcs $@ $^\n");
-
-        if (root->exports){
-            write_headers(root, makefile_path);
-        }
-
-    }
-    fprintf(makefile, "\nCLEAN_%s:\n", libname);
-    fprintf(makefile, "\trm -rf %s %s\n", libname, objects);
-    fclose(makefile);
-
-    if (conf.run_make){
-        pid_t p = fork();
-        if (p){
-            wait(NULL);
-        } else {
-            char * makefile_dir = dirname(strdup(makefile_path));
-            chdir(makefile_dir);
-            free(makefile_dir);
-
-            execlp("make", "make", "-f", basename(makefile_path), libname, NULL);
-        }
-    }
-    free(libname);
-    free(makefile_path);
-    free(cwd);
-    free(objects);
+  if ( root_file == NULL ){
+      usage(executable);
+      return -1;
   }
+
+  switch(cmd) {
+      case cmd_clean:
+          clean(conf, root_file);
+          break;
+      case cmd_generate:
+          conf.free = true;
+          generate(conf, root_file);
+          break;
+      case cmd_build:
+      default:
+          build(conf, root_file);
+  }
+
+  free(cwd);
 }
 
