@@ -109,6 +109,10 @@ export{SEP}? {
   module_export_start(yyin, yytext);
 }
 
+extern{SEP}? {
+  module_export_extern(yyin, yytext);
+}
+
 typedef{SEP}? {
   module_export_type(yyin, yytext, TYPE);
 }

@@ -38,6 +38,7 @@ enum export_type {
     MODULE,
     BLOCK,
 };
+
 typedef struct {
     UT_hash_handle hh;
     char * key;
@@ -54,19 +55,19 @@ struct variable {
 };
 
 struct module_t {
-    UT_hash_handle hh;
-    import_t * imports;
-    export_t * exports;
-    char * name;
-    char * rel_path;
-    char * abs_path;
-    FILE * out;
-    char * generated_path;
-    char * header_path;
+    UT_hash_handle    hh;
+    import_t *        imports;
+    export_t *        exports;
+    char *            name;
+    char *            rel_path;
+    char *            abs_path;
+    FILE *            out;
+    char *            generated_path;
+    char *            header_path;
     struct variable * variables;
-    bool verbose;
-    bool is_exported;
-    bool is_write;
+    bool              verbose;
+    bool              is_exported;
+    bool              is_write;
 };
 
 enum statement {
@@ -87,7 +88,9 @@ typedef struct{
             size_t tokens_length;
             int is_function;
             int is_struct;
+            int is_extern;
             enum export_type type;
+            enum export_type typedef_type;
         } export;
     };
 } statement_t;
@@ -102,6 +105,7 @@ void module_unalias(FILE* current, const char * line);
 void module_name(FILE*current, const char * line);
 void module_exports(FILE* current, const char * line, enum export_type type);
 void module_export_type(FILE* current, const char * line, enum export_type type);
+void module_export_extern(FILE* current, const char * line);
 void module_export_fp(FILE* current, const char * line);
 void module_export_start(FILE* current, const char * line);
 void module_export_module(FILE* current, const char * line);

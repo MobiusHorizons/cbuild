@@ -69,6 +69,7 @@ static void print_dependencies(module * m, FILE* out, module * root){
 
 static char * c_dependency(import_t * i, FILE* out, char * objects, module * root){
     if (i->type != c_file) return objects;
+    if (i->module && i->module->is_exported) return objects;
 
     char * rel_path = relative(root->abs_path, i->file); 
     fprintf(out, "# dependencies for %s\n", rel_path);
@@ -87,6 +88,7 @@ static char * c_dependency(import_t * i, FILE* out, char * objects, module * roo
     strcat(objects, object_path);
     strcat(objects, ".o");
     free(object_path);
+    i->module->is_exported = true;
     return objects;
 }
 
@@ -190,7 +192,7 @@ int main(int argc, char **argv){
 
     if (strcmp(root->name, "main") == 0){
         fprintf(makefile, "%s:%s\n", libname, objects);
-        fprintf(makefile, "\t$(CC) $(CFLAGS) $(LDFLAGS) %s -o %s\n", objects, libname);
+        fprintf(makefile, "\t$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) %s -o %s\n", objects, libname);
     } else {
         strcat(libname, ".a");
         fprintf(makefile, "%s:%s\n", libname, objects);
