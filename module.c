@@ -453,6 +453,8 @@ module * export_module(module * m, char * alias){
 
 void module_export_exports(module * m, char * alias){
     import_t * import = NULL;
+    export_t * e;
+
     HASH_FIND_STR(m->imports, alias, import);
     if (import != NULL){
         return;
@@ -464,11 +466,24 @@ void module_export_exports(module * m, char * alias){
     import->type   = module_import;
     import->module = module_parse(import->file, m->verbose, m->parse_only);
 
+    char * header_path = relative(m->abs_path, import->module->header_path);
+    char * declaration = malloc(strlen(header_path) + strlen("#include \"\"") + 1);
+    sprintf(declaration, "#include \"%s\"\n", header_path); 
+    free(header_path);
+
+    char * export_name = malloc(strlen(alias) + strlen("HEADER_") + 1);
+    strcpy(export_name, "HEADER_");
+    strcat(export_name, alias);
+
+    e = malloc(sizeof(export_t));
+    e->type        = MODULE;
+    e->declaration = declaration;
+    e->name        = export_name;
+    e->key         = export_name;
+    HASH_ADD_STR(m->exports, name, e);
+
     write_headers(import->module, m);
     HASH_ADD_STR(m->imports, alias, import);
-
-
-    export_t * e;
 
     module * dep = import->module;
     for (e = &dep->exports[0]; e != NULL; e = e->hh.next) {
