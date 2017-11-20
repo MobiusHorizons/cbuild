@@ -10,6 +10,8 @@ The syntax provides the following conveniences:
 * Automatic header generation.
 * Automatic Makefile generation
 
+See [syntax.md](./syntax.md) for module syntax documentation.
+
 # Build Instructions:
 
 The project probably works on all `posix` based systems. It has been tested on `OSX`, `Linux`, and `FreeBSD`.
@@ -46,6 +48,3 @@ the `module` is the source for either an executable or library you would like to
 `.mk` file which specifies the depencencies between all the generated files and their respective objects, it also
 contains a rule to build either a static library or an executable for modules where the name is `main`.
 
-# Syntax:
-
-See [syntax.md](./syntax.md)
