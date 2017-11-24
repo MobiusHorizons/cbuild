@@ -20,6 +20,7 @@ as `a.do();`
 ### Generated Syntax
 
 `import a from "./awesome.module.c";` -> `#include "./awesome.h"`
+
 `a.do();` -> `awesome_do();`
 
 
@@ -60,7 +61,7 @@ export void do(void){
 // with alias
 export void do_awesome_thing(void){
   ...
-} as do
+} as do_thing
 
 do_awesome_thing();
 ```
