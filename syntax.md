@@ -52,7 +52,7 @@ The generated syntax ends up in the header.
 > Export a symbol from your module
 
 ### Syntax:
-```javascript
+```c
 // without an alias
 export void do(void){
   ...
@@ -72,7 +72,7 @@ the module's namespace prefix. This prefix is based on the filename, or can be o
 
 ### Generated Syntax
 
-```
+```c
 // without aliases.
 export void do(void){
   ...
@@ -88,7 +88,7 @@ do_awesome_thing();
 
 which would become
 
-```
+```c
 // without aliases
 void awesome_do(void){
   ...
