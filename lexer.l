@@ -1,9 +1,11 @@
 %{
   #include "./module.h"
+  #define YY_USER_ACTION CONTEXT()
 %}
 
 %option reentrant
 %option noyywrap
+%option yylineno
 
 
 DIGIT    [0-9]
@@ -99,6 +101,10 @@ platform{SEP}{ID}{SEP}?\{ {
 
 ; {
   module_export_try_end(yyin, yytext);
+}
+
+{SEP}?as{SEP}{ID} {
+  module_export_rename(yyin, yytext);
 }
 
 export{SEP}\*{SEP}from{SEP}{FILENAME}{SEP}?; {

@@ -149,10 +149,11 @@ void write_headers(module * root, const char * path){
     FILE* header = fopen(header_path, "w");
     free(header_path);
 
-    export_t * e;
-    for (e = &root->exports[0]; e != NULL; e = e->hh.next){
-        fprintf(header,"%s\n", e->declaration);
-    }
+    enumerate_exports(root, header);
+    /*export_t * e;*/
+    /*for (e = &root->exports[0]; e != NULL; e = e->hh.next){*/
+        /*fprintf(header,"%s\n", e->declaration);*/
+    /*}*/
 
     fclose(header);
 }

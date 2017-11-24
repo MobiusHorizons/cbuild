@@ -23,25 +23,83 @@ as `a.do();`
 `a.do();` -> `awesome_do();`
 
 
+## Module Exports
+> Export the symbols of a different module
 
-## Exports
+### Syntax:
+`export * from "dependency.module.c";`
+
+### Description
+All of the symbols exported by `dependency.module.c` will become available to modules that import the current module. For Example:
+
+```
+// index.module.c
+
+export * from "a.module.c";
+export * from "b.module.c";
+export * from "c.module.c";
+```
+
+This allows you to import just the `index.module.c` and get all the types and functions.
+
+### Generated Syntax
+
+The generated syntax ends up in the header.
+`export * from "a.module.c";` -> `#include "a.h"` 
+
+## Symbol Exports
 > Export a symbol from your module
 
 ### Syntax:
 ```javascript
+// without an alias
 export void do(void){
   ...
 }
+
+// with alias
+export void do_awesome_thing(void){
+  ...
+} as do
+
+do_awesome_thing();
 ```
 
 ### Description
-Running `export` on a symbol prefixes it with
+Putting `export` before a symbol declaration prefixes it with
 the module's namespace prefix. This prefix is based on the filename, or can be overwritten using the `package` command.
 
 ### Generated Syntax
 
-`export void do(void){` -> `void awesome_do(void){`
+```
+// without aliases.
+export void do(void){
+  ...
+}
 
+// with alias
+export void do_awesome_thing(void){
+  ...
+} as do_thing
+
+do_awesome_thing();
+```
+
+which would become
+
+```
+// without aliases
+void awesome_do(void){
+  ...
+}
+
+// with alias
+void awesome_do_thing(void){
+  ...
+}
+
+awesome_do_thing();
+```
 
 ## Build Options
 > Change the generated makefile.

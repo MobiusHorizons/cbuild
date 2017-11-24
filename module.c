@@ -14,7 +14,6 @@
 #include <sys/stat.h>
 
 module * export_module(module * m, char * alias);
-static void enumerate_exports(module * m, FILE* out);
 
 module modules[255] = {0};
 module * module_cache = NULL;
@@ -30,6 +29,7 @@ const char* type_names[] = {
     "STRUCT",
     "ENUM",
     "MODULE",
+    "BLOCK",
 };
 
 static void write_headers(module * dep, module * m){
@@ -57,9 +57,9 @@ static void write_headers(module * dep, module * m){
 
 #define GUARDS_HEAD "#ifndef _%s_\n#define _%s_\n\n"
 #define GUARDS_FOOT "#endif\n"
-static void enumerate_exports(module * m, FILE* out){
-    /*fprintf(stderr, "EXPORTS for '%s'\n", m->abs_path);*/
-    /*fprintf(stderr, "Package : %s\n", m->name);*/
+void enumerate_exports(module * m, FILE* out){
+    int  last_type = -1;
+    bool last_was_multiline = false;
     export_t * e;
 
     fprintf(out, GUARDS_HEAD, m->name, m->name);
@@ -67,11 +67,47 @@ static void enumerate_exports(module * m, FILE* out){
         fprintf(stderr, GUARDS_HEAD, m->name, m->name);
     }
 
-    for (e = &m->exports[0]; e != NULL; e = e->hh.next){
-        if (m->verbose){
-            fprintf(stderr, "%s_%s (%s): \"%s\"\n", m->name, e->name, type_names[e->type], e->declaration);
+    int run;
+    for (run = 0; run < 2; run++){
+        for (e = &m->exports[0]; e != NULL; e = e->hh.next){
+            if (e->is_alias) continue;
+            if (run == 0 && !(e->type == MODULE || e->type == BLOCK)) continue;
+            if (run == 1 &&  (e->type == MODULE || e->type == BLOCK)) continue;
+
+            const char * prefix = "";
+            const char * suffix = "";
+
+            char * declaration = strdup(e->declaration);
+            char * start       = declaration;
+            char * end         = declaration + strlen(declaration);
+
+            while(start < end && isspace(*start))  start++;
+            while(start < end && isspace(end[-1])) end--;
+            *end = 0;
+
+            bool multiline = (index(start, '\n') != NULL);
+
+            if (multiline) suffix = "\n";
+
+            if (last_type != -1 && last_type != e->type && !last_was_multiline) {
+                prefix = "\n";
+            }
+
+            if (e->type == BLOCK || e->type == MODULE) {
+                fprintf(out, "%s%s\n%s", prefix, start, suffix);
+                if (m->verbose) {
+                    fprintf(stderr, "%s%s\n%s", prefix, start, suffix);
+                }
+            } else {
+                fprintf(out, "%s%s;\n%s", prefix, start, suffix);
+                if (m->verbose) {
+                    fprintf(stderr, "%s%s;\n%s", prefix, start, suffix);
+                }
+            }
+
+            last_was_multiline = multiline;
+            last_type = e->type;
         }
-        fprintf(out, "%s\n", e->declaration);
     }
     fprintf(out, "\n");
     fprintf(out, GUARDS_FOOT);
@@ -130,7 +166,7 @@ void module_imports(FILE*current, const char * line){
     import->module = module_parse(import->file, m->verbose, m->parse_only);
     write_headers(import->module, m);
     char * header_path = relative(m->abs_path, import->module->header_path);
-    if(m->is_write) fprintf(m->out, "#include \"%s\"\n", header_path); 
+    if(m->is_write) fprintf(m->out, "#include \"%s\"", header_path); 
     free(header_path);
     HASH_ADD_STR(m->imports, alias, import);
 }
@@ -147,10 +183,10 @@ char * module_prefix(FILE* current, const char * line){
                 char * out = malloc(strlen(m->name) + strlen(line) + 2);
                 strcpy(out, m->name);
                 strcat(out, "_");
-                strcat(out, line);
+                strcat(out, e->alias);
                 return out;
             } else {
-                if(m->is_write) fprintf(m->out,"%s_%s", m->name, line);
+                if(m->is_write) fprintf(m->out,"%s_%s", m->name, e->alias);
                 return NULL;
             }
         }
@@ -183,7 +219,12 @@ module * module_parse(const char * filename, bool verbose, bool parse_only){
 
     if (abs_path == NULL){
         int errnum = errno;
-        fprintf(stderr, "Error resolving \"%s\": %s\n", filename, strerror( errnum ));
+        if (context.fd > 0){
+            fprintf(stderr, "%s:%d ", (modules[context.fd]).rel_path, context.line);
+            fprintf(stderr, "Error resolving \"%s\": %s\n", filename, strerror( errnum ));
+        } else {
+            fprintf(stderr, "error: %s: %s\n", strerror( errnum ), filename);
+        }
         exit(-1);
     }
 
@@ -324,8 +365,9 @@ void module_unalias(FILE*current, const char * line){
             HASH_FIND_STR(import->module->exports, sep, e);
 
             if (e == NULL){
-                fprintf(stderr, "%s: Module %s does not export symbol %s\n",
+                fprintf(stderr, "%s:%d Module %s does not export symbol %s\n",
                         m->rel_path,
+                        context.line,
                         import->module->name, 
                         sep
                 );
@@ -336,8 +378,8 @@ void module_unalias(FILE*current, const char * line){
             char * unaliased;
             switch (e->type) {
                 case MODULE:
-                    unaliased = malloc(strlen(e->key) + strlen(sep) + 2);
-                    sprintf(unaliased, "%s_%s", e->key, sep);
+                    unaliased = malloc(strlen(e->prefix) + strlen(sep) + 2);
+                    sprintf(unaliased, "%s_%s", e->prefix, sep);
                     break;
                 default:
                     unaliased = malloc(strlen(import->module->name) + strlen(sep) + 2);
@@ -439,13 +481,14 @@ module * export_module(module * m, char * alias){
     export_t * export = malloc(sizeof(export_t));
     export->type        = MODULE;
     export->name        = alias;
-    export->key         = alias;
+    export->prefix      = m->name;
+    export->is_alias    = false;
     export->declaration = malloc(declaration_len);
 
     snprintf(export->declaration, declaration_len, "#include \"%s\"", rel_path); 
 
     export->declaration[declaration_len-1] = '\0';
-    HASH_ADD_STR(m->exports, name , export);
+    HASH_ADD_STR(m->exports, name, export);
     free(rel_path);
 
     return import->module;
@@ -466,6 +509,7 @@ void module_export_exports(module * m, char * alias){
     import->type   = module_import;
     import->module = module_parse(import->file, m->verbose, m->parse_only);
 
+    write_headers(import->module, m);
     char * header_path = relative(m->abs_path, import->module->header_path);
     char * declaration = malloc(strlen(header_path) + strlen("#include \"\"") + 1);
     sprintf(declaration, "#include \"%s\"\n", header_path); 
@@ -479,7 +523,8 @@ void module_export_exports(module * m, char * alias){
     e->type        = MODULE;
     e->declaration = declaration;
     e->name        = export_name;
-    e->key         = export_name;
+    e->is_alias    = false;
+    e->prefix      = "";
     HASH_ADD_STR(m->exports, name, e);
 
     write_headers(import->module, m);
@@ -491,7 +536,8 @@ void module_export_exports(module * m, char * alias){
         memcpy(passthrough, e, sizeof(export_t));
 
         passthrough->type        = MODULE;
-        passthrough->key         = dep->name;
+        passthrough->prefix      = dep->name;
+        passthrough->is_alias    = false;
         passthrough->declaration = strdup("");
 
         HASH_ADD_STR(m->exports, name, passthrough);
@@ -519,41 +565,82 @@ void module_export_module(FILE*current, const char * line){
     module_export_exports(m, alias);
 }
 
+void module_export_rename(FILE*current, const char * line) {
+    module * m = &modules[fileno(current)];
+    if (recording && level[1] == 0 && c_stmt.type == EXPORT){
+
+        const char * end   = line + strlen(line);
+        const char * start = line;
+
+        while(start < end && isspace(*start)) start++;
+        start = start + strlen("as");
+        while(start < end && isspace(*start)) start++;
+
+        size_t len = end - start;
+        char * to = malloc(len + 1);
+        strncpy(to, start, len);
+        to[len] = 0;
+
+        c_stmt.export.alias = to;
+    }
+}
+
 
 void module_export_try_end(FILE*current, const char * line){
     module * m = &modules[fileno(current)];
 
-    if (recording && level[1] == 0 && c_stmt.type == EXPORT){
-        if (c_stmt.export.name == NULL){
+    if (recording && level[1] == 0 && c_stmt.type == EXPORT) {
+        if (c_stmt.export.name == NULL) {
             c_stmt.export.name = c_stmt.export.last_id;
         }
         recording = 0;
         export_t * e = malloc(sizeof(export_t));
 
+        e->prefix = NULL;
         e->name = strdup(c_stmt.export.name);
-        e->type = c_stmt.export.type;
 
+        if (c_stmt.export.alias == NULL) {
+            e->alias = e->name;
+        } else {
+            e->alias  = c_stmt.export.alias;
+        }
 
-        e->declaration = malloc(c_stmt.export.tokens_length + strlen(m->name) + 3);
+        e->type     = c_stmt.export.type;
+        e->is_alias = false;
+
+        e->declaration = malloc(c_stmt.export.tokens_length + strlen(m->name) + strlen(e->alias) + 3);
         e->declaration[0] = '\0';
 
         int i;
-        for (i = 0; i < c_stmt.export.num_tokens; i++){
-            if ( c_stmt.export.tokens[i] == c_stmt.export.name){
+        for (i = 0; i < c_stmt.export.num_tokens; i++) {
+            if (c_stmt.export.tokens[i] == c_stmt.export.name) {
                 strcat(e->declaration, m->name);
                 strcat(e->declaration, "_");
+                strcat(e->declaration, e->alias);
+            } else {
+                strcat(e->declaration, c_stmt.export.tokens[i]);
             }
-            strcat(e->declaration, c_stmt.export.tokens[i]);
+
             free(c_stmt.export.tokens[i]);
         }
-        if(m->is_write && c_stmt.export.is_extern == 0) fprintf(m->out,"%s%s",e->declaration, line);
-        if (e->type != BLOCK){
-            strcat(e->declaration, ";");
+
+        if (m->is_write && c_stmt.export.is_extern == 0) {
+            fprintf(m->out,"%s%s",e->declaration, line);
         }
+
         HASH_ADD_STR(m->exports, name, e);
+        if (e->alias != e->name){
+            export_t * a = malloc(sizeof(export_t));
+            memcpy(a, e, sizeof(export_t));
+            a->name = e->alias; 
+            a->is_alias = true;
+            HASH_ADD_STR(m->exports, name, a);
+        }
+
         free(c_stmt.export.tokens);
         c_stmt.export.num_tokens = 0;
         c_stmt.export.tokens = NULL;
+        c_stmt.export.alias = NULL;
         c_stmt.type = NONE;
     } else {
         module_export_declaration(current, line);

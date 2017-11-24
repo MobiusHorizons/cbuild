@@ -7,6 +7,20 @@
 
 typedef struct module_t module;
 
+struct {
+    int line;
+    int col;
+    int fd;
+    const char * text;
+} context;
+
+#define CONTEXT() {                                         \
+    context.line = YY_CURRENT_BUFFER_LVALUE->yy_bs_lineno;  \
+    context.col  = YY_CURRENT_BUFFER_LVALUE->yy_bs_column;  \
+    context.fd   = fileno(yyin);                            \
+    context.text = yytext;                                  \
+};
+
 enum import_type {
     global_import = 0,
     module_import,
@@ -41,10 +55,12 @@ enum export_type {
 
 typedef struct {
     UT_hash_handle hh;
-    char * key;
+    char * prefix;
     char * name;
+    char * alias;
     enum export_type type;
     char * declaration;
+    bool is_alias;
 } export_t;
 
 struct variable {
@@ -92,6 +108,7 @@ typedef struct{
             int is_extern;
             enum export_type type;
             enum export_type typedef_type;
+            char * alias;
         } export;
     };
 } statement_t;
@@ -101,6 +118,7 @@ extern int recording;
 extern export_t current_export;
 extern statement_t c_stmt;
 
+void enumerate_exports(module * m, FILE* out);
 void module_imports(FILE* current, const char * line);
 void module_unalias(FILE* current, const char * line);
 void module_name(FILE*current, const char * line);
@@ -110,6 +128,7 @@ void module_export_extern(FILE* current, const char * line);
 void module_export_fp(FILE* current, const char * line);
 void module_export_start(FILE* current, const char * line);
 void module_export_module(FILE* current, const char * line);
+void module_export_rename(FILE* current, const char * line);
 char * module_prefix (FILE* current, const char * line);
 void module_export_try_end(FILE*current, const char * line);
 
