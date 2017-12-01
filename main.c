@@ -17,6 +17,7 @@ struct config {
     bool run_make;
     bool free;
     bool parse_only;
+    bool force;
 };
 
 enum command {
@@ -159,7 +160,11 @@ void write_headers(module * root, const char * path){
 }
 
 struct generate generate(struct config conf, const char * root_file) {
-  module * root = module_parse(root_file, conf.verbose, conf.parse_only);
+  int force = 0;
+  if (conf.parse_only) force = 1;
+  if (conf.force)      force = 2;
+
+  module * root = module_parse(root_file, conf.verbose, force);
   strcpy(cwd_buffer, root->abs_path);
   cwd = strdup(dirname(cwd_buffer));
 
@@ -325,6 +330,9 @@ int main(int argc, char **argv){
                   break;
               case 'v':
                   conf.verbose = true;
+                  break;
+              case 'f':
+                  conf.force = true;
                   break;
               default:
                   fprintf(stderr, "Unknown option (%s)\n", *argv);

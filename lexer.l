@@ -30,6 +30,10 @@ TYPE     (typedef|int|char|long|short|double|float|void)
     module_export_declaration(yyin,yytext);
 }
 
+"->"{ID} {
+    module_export_declaration(yyin,yytext);
+}
+
 {ID}"."{ID} {
     module_unalias(yyin, yytext);
 }
