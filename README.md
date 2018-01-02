@@ -1,4 +1,4 @@
-# cbuild 2.0 - builder and preprocessor for modular c files.  [![Build Status](https://travis-ci.org/MobiusHorizons/cbuild.svg?branch=master)](https://travis-ci.org/MobiusHorizons/cbuild)
+# cbuild 2.0 - builder and preprocessor for modular c files  [![Build Status](https://travis-ci.org/MobiusHorizons/cbuild.svg?branch=master)](https://travis-ci.org/MobiusHorizons/cbuild)
 
 This project provides a build system for building programs and libraries in a modular `C` syntax.
 The syntax provides the following conveniences:
@@ -10,20 +10,16 @@ The syntax provides the following conveniences:
 See [syntax.md](./syntax.md) for module syntax documentation.
 
 # Version 2
-Version 2.0 of the project represents a complete from-scratch rewrite of the project using the modular 'C' syntax. The project is self-hosted meaning it is used to compile itself, but the generated `C` source files are left in the repository so that it can be build with a simple `make`.
+Version 2.0 of the project represents a complete, from scratch rewrite of the project using the modular `C` syntax. The project is self-hosted meaning it is used to compile itself, but the generated `C` source files are left in the repository so that it can be build with a simple `make`.
 
 Version 2.0 brings a number of enhancements over the original.
-* Unit Tests
-  Not nearly everything is covered yet, but they exist and get built by Travis
+* Unit Tests - Not nearly everything is covered yet, but they exist and get built by Travis
 
-* Better Lexer
-   Instead of using `flex` as the previous version did, this project uses a hand-coded lexer build after the style of Rob Pike's go template lexer.
+* Better Lexer - Instead of using `flex` as the previous version did, this project uses a hand-coded lexer build after the style of Rob Pike's go template lexer.
 
-* Real Parser
-  The first version just abused the lexer's features to determine syntax it would try to parse. As a result, many syntax errors would be pass through without any feedback, and get caught by the `C` compiler. The new hand coded parser is much better at catching syntax errors, and can provide useful error messages.
+* Real Parser - The first version just abused the lexer's features to determine syntax it would try to parse. As a result, many syntax errors would be pass through without any feedback, and get caught by the `C` compiler. The new hand coded parser is much better at catching syntax errors, and can provide useful error messages.
 
-* Error Messages
-  Useful error messages for incorrect syntax.
+* Error Messages - Useful error messages for incorrect syntax.
 
 
 # Cloning Instructions:
