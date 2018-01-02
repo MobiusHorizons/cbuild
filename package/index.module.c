@@ -9,14 +9,15 @@ build depends "../deps/hash/hash.c";
 #include <unistd.h>
 #include <libgen.h>
 
-import Package from "./package.module.c";
+import stream  from "../deps/stream/stream.module.c";
+import file    from "../deps/stream/file.module.c";
 import grammer from "../parser/grammer.module.c";
 import parser  from "../parser/parser.module.c";
+import utils   from "../utils/utils.module.c";
+import Package from "./package.module.c";
 import Import  from "./import.module.c";
 import Export  from "./export.module.c";
-import stream  from "../deps/stream/stream.module.c";
 import atomic  from "./atomic-stream.module.c";
-import file    from "../deps/stream/file.module.c";
 
 static void init_cache() {
   Package.path_cache = hash_new();
@@ -125,20 +126,22 @@ Package.t * new(const char * relative_path, char ** error) {
   }
 
   char * generated = generated_name(key);
-
-  stream.t * out = atomic.open(generated);
-  if (out->error.code != 0) {
-    if (error) *error = strdup(out->error.message);
-    return NULL;
+  stream.t * out = NULL;
+  if (utils.newer(relative_path, generated)) {
+    out = atomic.open(generated);
+    if (out->error.code != 0) {
+      if (error) *error = strdup(out->error.message);
+      return NULL;
+    }
   }
 
   Package.t * p = parse(input, out, relative_path, key, generated, error);
 
   if (p == NULL || *error != NULL) {
-    atomic.abort(out);
+    if (out) atomic.abort(out);
     return NULL;
   }
 
-  stream.close(out);
+  if (out) stream.close(out);
   return p;
 }

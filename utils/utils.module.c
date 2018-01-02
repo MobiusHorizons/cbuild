@@ -1,6 +1,13 @@
+#define _BSD_SOURCE
+#define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <time.h>
+export {
 #include <stdbool.h>
+}
 
 #define SEP '/'
 
@@ -43,4 +50,28 @@ export char * relative(const char * from, const char * to){
   }
   strcat(rel, &to[last_sep + 1]);
   return rel;
+}
+
+export bool newer(const char * a, const char * b) {
+  struct stat sta;
+  struct stat stb;
+
+  int resa = lstat(a, &sta);
+  if (resa == -1) return false;
+
+  int resb = lstat(b, &stb);
+  if (resb == -1) return true;
+
+
+#ifdef __MACH__
+  if (sta.st_mtimespec.tv_sec == stb.st_mtimespec.tv_sec) {
+    return sta.st_mtimespec.tv_nsec > stb.st_mtimespec.tv_nsec;
+  }
+  return sta.st_mtimespec.tv_sec > stb.st_mtimespec.tv_sec;
+#else
+  if (sta.st_mtim.tv_sec == stb.st_mtim.tv_sec) {
+    return sta.st_mtim.tv_nsec > stb.st_mtim.tv_nsec;
+  }
+  return sta.st_mtim.tv_sec > stb.st_mtim.tv_sec;
+#endif
 }

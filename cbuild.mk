@@ -24,7 +24,7 @@ package/atomic-stream.o: package/atomic-stream.c deps/stream/stream.h
 package/import.o: package/import.c package/package.h package/export.h
 
 #dependencies for package 'package/index.c'
-package/index.o: package/index.c deps/stream/stream.h parser/grammer.h package/export.h package/import.h package/package.h package/atomic-stream.h deps/stream/file.h parser/parser.h
+package/index.o: package/index.c deps/stream/stream.h utils/utils.h parser/grammer.h package/export.h package/import.h package/package.h package/atomic-stream.h deps/stream/file.h parser/parser.h
 
 #dependencies for package 'parser/grammer.c'
 parser/grammer.o: parser/grammer.c deps/stream/stream.h parser/parser.h lexer/item.h lexer/syntax.h parser/import.h package/package.h parser/export.h parser/package.h parser/identifier.h parser/build.h lexer/lex.h

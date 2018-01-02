@@ -9,14 +9,15 @@
 #include <unistd.h>
 #include <libgen.h>
 
-#include "package.h"
+#include "../deps/stream/stream.h"
+#include "../deps/stream/file.h"
 #include "../parser/grammer.h"
 #include "../parser/parser.h"
+#include "../utils/utils.h"
+#include "package.h"
 #include "import.h"
 #include "export.h"
-#include "../deps/stream/stream.h"
 #include "atomic-stream.h"
-#include "../deps/stream/file.h"
 
 static void init_cache() {
   package_path_cache = hash_new();
@@ -125,20 +126,22 @@ package_t * index_new(const char * relative_path, char ** error) {
   }
 
   char * generated = index_generated_name(key);
-
-  stream_t * out = atomic_stream_open(generated);
-  if (out->error.code != 0) {
-    if (error) *error = strdup(out->error.message);
-    return NULL;
+  stream_t * out = NULL;
+  if (utils_newer(relative_path, generated)) {
+    out = atomic_stream_open(generated);
+    if (out->error.code != 0) {
+      if (error) *error = strdup(out->error.message);
+      return NULL;
+    }
   }
 
   package_t * p = index_parse(input, out, relative_path, key, generated, error);
 
   if (p == NULL || *error != NULL) {
-    atomic_stream_abort(out);
+    if (out) atomic_stream_abort(out);
     return NULL;
   }
 
-  stream_close(out);
+  if (out) stream_close(out);
   return p;
 }

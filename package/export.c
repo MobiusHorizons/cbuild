@@ -89,8 +89,10 @@ void package_export_write_headers(package_t * pkg) {
   if (pkg->header_abs) return;
 
   pkg->header_abs = get_header_path(pkg->generated);
-  stream_t * header = atomic_stream_open(pkg->header_abs);
 
+  if (!utils_newer(pkg->source_abs, pkg->header_abs)) return;
+
+  stream_t * header = atomic_stream_open(pkg->header_abs);
   stream_printf(header, "#ifndef _package_%s_\n" "#define _package_%s_\n\n", pkg->name, pkg->name);
 
   enum package_export_type last_type;

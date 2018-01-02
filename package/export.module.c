@@ -89,8 +89,10 @@ export void write_headers(Package.t * pkg) {
   if (pkg->header_abs) return;
 
   pkg->header_abs = get_header_path(pkg->generated);
-  stream.t * header = atomic.open(pkg->header_abs);
 
+  if (!utils.newer(pkg->source_abs, pkg->header_abs)) return;
+
+  stream.t * header = atomic.open(pkg->header_abs);
   stream.printf(header, "#ifndef _package_%s_\n" "#define _package_%s_\n\n", pkg->name, pkg->name);
 
   enum export_type last_type;
