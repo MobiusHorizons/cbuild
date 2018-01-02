@@ -83,7 +83,7 @@ export char * to_string(item_t item) {
       return strdup("<eof>");
 
     default:
-      if (item.length > 20 || index(item.value, '\n') != NULL) {
+      if (item.length > 20 || strchr(item.value, '\n') != NULL) {
         asprintf(&buf, "%s '%.*s...'", name, 20, item.value);
         return buf;
       }

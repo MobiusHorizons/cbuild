@@ -18,6 +18,4 @@ package_t * index_parse(
     char ** error
 );
 
-void index_debug_print(package_t * pkg);
-
 #endif

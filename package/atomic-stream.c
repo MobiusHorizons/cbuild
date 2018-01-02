@@ -39,7 +39,6 @@ static ssize_t atomic_write(void * _ctx, const void * buf, size_t nbyte, stream_
 static ssize_t atomic_close(void * _ctx, stream_error_t * error) {
   context_t * ctx = (context_t*) _ctx;
 
-  /*printf("ATOMIC_CLOSE: fd = %d (%s %s)\n", ctx->fd, ctx->temp, ctx->dest);*/
   int e = close(ctx->fd);
   if (e < 0 && error != NULL) {
     error->code    = errno;
@@ -63,10 +62,9 @@ static ssize_t atomic_close(void * _ctx, stream_error_t * error) {
 }
 
 static char * get_temp(char * base) {
-  int length = strlen(base);
   int salt = rand();
   char * temp = NULL;
-  char * ext  = rindex(base, '.');
+  char * ext  = strrchr(base, '.');
 
   asprintf(&temp, "%.*s-%x%s", (int)(ext - base), base, salt, ext);
   return temp;
@@ -86,8 +84,6 @@ stream_t * atomic_stream_open(const char * _dest) {
     free(temp);
     return stream_error(NULL, errno, strerror(errno));
   }
-
-  /*printf("ATOMIC_OPEN: fd = %d (%s %s)\n", fd, temp, dest);*/
 
   context_t * ctx = malloc(sizeof(context_t));
   ctx->fd   = fd;
@@ -112,9 +108,7 @@ stream_t * atomic_stream_open(const char * _dest) {
 ssize_t atomic_stream_abort(stream_t * s) {
   if (s->type != atomic_stream_type()) return stream_close(s);
 
-
   context_t * ctx = (context_t*) s->ctx;
-  /*printf("ATOMIC_ABORT: fd = %d (%s %s)\n", ctx->fd, ctx->temp, ctx->dest);*/
 
   close(ctx->fd);
   int e = unlink(ctx->temp);

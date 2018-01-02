@@ -1,12 +1,14 @@
-
-
+#define _BSD_SOURCE
 #define _GNU_SOURCE
+
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
 #include "parser/colors.h"
+
 
 
 #include "deps/hash/hash.h"

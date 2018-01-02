@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 package "string_stream";
 import stream from "../deps/stream/stream.module.c";
 

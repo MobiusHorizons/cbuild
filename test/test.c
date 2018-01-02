@@ -1,11 +1,13 @@
-
-
+#define _BSD_SOURCE
 #define _GNU_SOURCE
+
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "../parser/colors.h"
+
 
 
 #include "../deps/hash/hash.h"
@@ -340,10 +342,6 @@ static test_case _imports[] = {
   },
 };
 
-static void printend(const char * string, size_t length, size_t width) {
-  printf("\r\033[%luC%s\n", width - length, string);
-}
-
 static bool run_test(test_case c) {
   printf(BOLD "  %s: \r" RESET, c.desc); fflush(stdout);
   stream_t * in  = string_stream_new_reader(c.input);
@@ -382,6 +380,7 @@ static bool run_test(test_case c) {
   }
 
   printf("\n");
+  stream_close(out);
   return false;
 }
 

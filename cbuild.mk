@@ -1,4 +1,5 @@
 #dependencies for package 'cbuild.c'
+CFLAGS += -std=c99
 cbuild.o: cbuild.c deps/stream/stream.h utils/utils.h package/package.h package/export.h package/import.h package/atomic-stream.h package/index.h
 
 #dependencies for package 'deps/stream/stream.c'

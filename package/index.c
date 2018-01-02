@@ -142,19 +142,3 @@ package_t * index_new(const char * relative_path, char ** error) {
   stream_close(out);
   return p;
 }
-
-void index_debug_print(package_t * pkg) {
-  printf("Imports:\n");
-  hash_each(pkg->deps, {
-      package_import_t * imp = (package_import_t *) val;
-      printf("    import %s %s\n", key, imp->filename);
-  })
-  printf("\n");
-
-  printf("Exports:\n");
-  hash_each(pkg->exports, {
-      package_export_t * exp = (package_export_t *) val;
-      printf("    export %s %s\n", key, exp->declaration);
-  })
-  printf("\n");
-}

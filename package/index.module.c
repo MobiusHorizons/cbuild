@@ -142,19 +142,3 @@ Package.t * new(const char * relative_path, char ** error) {
   stream.close(out);
   return p;
 }
-
-export void debug_print(Package.t * pkg) {
-  printf("Imports:\n");
-  hash_each(pkg->deps, {
-      Import.t * imp = (Import.t *) val;
-      printf("    import %s %s\n", key, imp->filename);
-  })
-  printf("\n");
-
-  printf("Exports:\n");
-  hash_each(pkg->exports, {
-      Export.t * exp = (Export.t *) val;
-      printf("    export %s %s\n", key, exp->declaration);
-  })
-  printf("\n");
-}

@@ -1,5 +1,5 @@
-#include <stdarg.h>
 #define _GNU_SOURCE
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -15,9 +15,9 @@ import Package    from "../package/package.module.c";
 import pkg_export from "../package/export.module.c";
 import pkg_import from "../package/import.module.c";
 
-const lex_item.t enum_i   = { .value = "enum",   .length = strlen("enum"),   .type = item_id };
-const lex_item.t union_i  = { .value = "union",  .length = strlen("union"),  .type = item_id };
-const lex_item.t struct_i = { .value = "struct", .length = strlen("struct"), .type = item_id };
+const lex_item.t enum_i   = { .value = "enum",   .length = 4, .type = item_id };
+const lex_item.t union_i  = { .value = "union",  .length = 5, .type = item_id };
+const lex_item.t struct_i = { .value = "struct", .length = 6, .type = item_id };
 
 typedef struct {
   lex_item.t * items;

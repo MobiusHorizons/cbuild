@@ -101,7 +101,7 @@ export void write_headers(Package.t * pkg) {
       Export_t * exp = (Export_t *) pkg->ordered[i];
       bool newline   = false;
       bool prefix    = false;
-      bool multiline = index(exp->declaration, '\n') != NULL;
+      bool multiline = strchr(exp->declaration, '\n') != NULL;
 
       if (had_newline == false && (last_type != exp->type || multiline)) prefix = true;
       /*if (had_newline == false && multiline) prefix = true;*/

@@ -1,6 +1,7 @@
+#define _BSD_SOURCE
+#define _GNU_SOURCE
 package "main";
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@ package "main";
 #include <libgen.h>
 #include "parser/colors.h"
 
+build append CFLAGS "-std=c99";
 build depends "deps/hash/hash.c";
 #include "deps/hash/hash.h"
 

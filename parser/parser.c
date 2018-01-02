@@ -1,3 +1,5 @@
+#define _BSD_SOURCE
+#define _GNU_SOURCE
 #include "../lexer/item.h"
 #include "../lexer/lex.h"
 #include "../lexer/stack.h"
@@ -158,7 +160,7 @@ void parser_verrorf(parser_t * p, lex_item_t item, const char * context, const c
 
   if (p->lexer->input != NULL && p->lexer->length > line_pos) {
     char * line_start  = p->lexer->input + line_pos;
-    char * line_end    = index(line_start, '\n');
+    char * line_end    = strchr(line_start, '\n');
     int    line_length = line_end == NULL ? col + item.length : line_end - line_start;
 
     fprintf(stderr, RESET "\n%.*s\n", line_length, line_start);
