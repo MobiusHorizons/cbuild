@@ -1,6 +1,7 @@
 import parser     from "./parser.module.c";
 import string     from "./string.module.c";
 import lex_item   from "../lexer/item.module.c";
+import Package    from "../package/package.module.c";
 import pkg_import from "../package/import.module.c";
 
 build depends "../deps/hash/hash.c";
@@ -65,7 +66,6 @@ static int parse_depends(parser.t * p) {
     return errorf(p, semicolon, "Expecting ';' but got '%s'", lex_item.to_string(semicolon));
   }
 
-  /*printf("build depends [%s];\n", filename.value);*/
   char * error = NULL;
   pkg_import.t * imp = pkg_import.add_c_file(p->pkg, string.parse(filename.value), &error);
   if (imp == NULL) {
@@ -102,7 +102,15 @@ static int parse_set(parser.t * p) {
     return errorf(p, semicolon, "Expecting ';' but got '%s'", lex_item.to_string(semicolon));
   }
 
-  printf("build set%s [%s] [%s];\n", is_default ? " default" : "", name.value, value.value);
+  Package.var_t v = {0};
+  v.name      = name.value;
+  v.value     = string.parse(value.value);
+  v.operation = is_default ? build_var_set_default : build_var_set;
+
+  p->pkg->variables = realloc(p->pkg->variables, sizeof(Package.var_t) * (p->pkg->n_variables + 1));
+  p->pkg->variables[p->pkg->n_variables] = v;
+  p->pkg->n_variables++;
+
   return 1;
 }
 
@@ -125,6 +133,13 @@ static int parse_append(parser.t * p) {
     return errorf(p, semicolon, "Expecting ';' but got '%s'", lex_item.to_string(semicolon));
   }
 
-  printf("build append [%s] [%s];\n", name.value, value.value);
+  Package.var_t v = {0};
+  v.name      = name.value;
+  v.value     = string.parse(value.value);
+  v.operation = build_var_append;
+
+  p->pkg->variables = realloc(p->pkg->variables, sizeof(Package.var_t) * (p->pkg->n_variables + 1));
+  p->pkg->variables[p->pkg->n_variables] = v;
+  p->pkg->n_variables++;
   return 1;
 }

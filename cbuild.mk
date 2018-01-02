@@ -26,7 +26,7 @@ package/import.o: package/import.c package/package.h package/export.h
 package/index.o: package/index.c deps/stream/stream.h parser/grammer.h package/export.h package/import.h package/package.h package/atomic-stream.h deps/stream/file.h parser/parser.h
 
 #dependencies for package 'parser/grammer.c'
-parser/grammer.o: parser/grammer.c deps/stream/stream.h parser/parser.h lexer/item.h lexer/syntax.h parser/import.h package/package.h parser/package.h parser/export.h parser/identifier.h parser/build.h lexer/lex.h
+parser/grammer.o: parser/grammer.c deps/stream/stream.h parser/parser.h lexer/item.h lexer/syntax.h parser/import.h package/package.h parser/export.h parser/package.h parser/identifier.h parser/build.h lexer/lex.h
 
 #dependencies for package 'parser/parser.c'
 parser/parser.o: parser/parser.c lexer/stack.h lexer/item.h package/package.h lexer/lex.h
@@ -52,23 +52,23 @@ parser/import.o: parser/import.c package/import.h parser/string.h utils/utils.h 
 #dependencies for package 'parser/string.c'
 parser/string.o: parser/string.c
 
+#dependencies for package 'parser/export.c'
+parser/export.o: parser/export.c parser/string.h utils/utils.h lexer/item.h package/package.h package/export.h parser/identifier.h package/import.h parser/parser.h
+
+#dependencies for package 'parser/identifier.c'
+parser/identifier.o: parser/identifier.c lexer/item.h package/package.h package/export.h lexer/stack.h package/import.h parser/parser.h
+
 #dependencies for package 'parser/package.c'
 parser/package.o: parser/package.c lexer/item.h parser/string.h parser/parser.h
 
-#dependencies for package 'parser/export.c'
-parser/export.o: parser/export.c package/export.h parser/identifier.h lexer/item.h package/package.h parser/parser.h
-
-#dependencies for package 'parser/identifier.c'
-parser/identifier.o: parser/identifier.c lexer/item.h package/package.h lexer/stack.h package/import.h package/export.h parser/parser.h
-
 #dependencies for package 'parser/build.c'
-parser/build.o: parser/build.c package/import.h parser/string.h lexer/item.h parser/parser.h
+parser/build.o: parser/build.c package/import.h parser/string.h lexer/item.h package/package.h parser/parser.h
 
 #dependencies for package 'deps/stream/file.c'
 deps/stream/file.o: deps/stream/file.c deps/stream/stream.h
 
-cbuild: cbuild.o deps/stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/package.o parser/export.o parser/identifier.o parser/build.o deps/stream/file.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) cbuild.o deps/stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/package.o parser/export.o parser/identifier.o parser/build.o deps/stream/file.o -o cbuild
+cbuild: cbuild.o deps/stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o deps/stream/file.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) cbuild.o deps/stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o deps/stream/file.o -o cbuild
 
 CLEAN_cbuild:
-	rm -rf cbuild cbuild.o deps/stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/package.o parser/export.o parser/identifier.o parser/build.o deps/stream/file.o
+	rm -rf cbuild cbuild.o deps/stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o deps/stream/file.o

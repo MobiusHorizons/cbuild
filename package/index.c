@@ -99,7 +99,7 @@ package_t * index_parse(
 
   hash_set(package_path_cache, key, p);
 
-  if (grammer_parse(input, rel, p, error) != 0) return NULL;
+  p->errors = grammer_parse(input, rel, p, error);
   return p;
 }
 

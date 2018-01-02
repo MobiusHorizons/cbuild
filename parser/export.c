@@ -7,10 +7,13 @@
 #include "../deps/hash/hash.h"
 
 #include "parser.h"
+#include "string.h"
+#include "../utils/utils.h"
 #include "identifier.h"
 #include "../lexer/item.h"
 #include "../package/package.h"
 #include "../package/export.h"
+#include "../package/import.h"
 
 const lex_item_t enum_i   = { .value = "enum",   .length = strlen("enum"),   .type = item_id };
 const lex_item_t union_i  = { .value = "union",  .length = strlen("union"),  .type = item_id };
@@ -147,6 +150,8 @@ static lex_item_t parse_variable      (parser_t * p, decl_t * decl);
 static lex_item_t parse_function      (parser_t * p, decl_t * decl);
 static lex_item_t parse_function_args (parser_t * p, decl_t * decl);
 
+static int parse_passthrough (parser_t * p);
+
 static hash_t * export_types = NULL;
 static void init_export_types(){
   export_types = hash_new();
@@ -195,6 +200,9 @@ int export_parse(parser_t * p) {
       has_semicolon = is_extern || fn != NULL;
       t = 1;
       break;
+    case item_symbol:
+      if (type.value[0] == '*') return parse_passthrough(p);
+      break;
     case item_open_symbol:
       if (type.value[0] == '{') {
         fn = parse_export_block;
@@ -241,6 +249,45 @@ int export_parse(parser_t * p) {
   }
 
   package_export_add(name.value, alias.value, symbol.value, type.value, emit(p, &decl, t==2, is_extern), p->pkg);
+  return 1;
+}
+
+static int parse_passthrough(parser_t * p) {
+  decl_t decl = {0};
+  lex_item_t from = collect(p, &decl);
+  if (from.type != item_id || strcmp(from.value, "from") != 0) {
+    parser_errorf(p, from, "Exporting passthrough: ", "expected 'from', but got %s", lex_item_to_string(from));
+    free(decl.items);
+    return -1;
+  }
+
+  lex_item_t filename = collect(p, &decl);
+  if (filename.type != item_quoted_string) {
+    parser_errorf(p, filename, "Exporting passthrough: ", "expected filename, but got %s", lex_item_to_string(filename));
+    free(decl.items);
+    return -1;
+  }
+
+  parse_semicolon(p, &decl);
+  if (decl.error) {
+    free(decl.items);
+    return -1;
+  }
+
+  char * error = NULL;
+  package_import_t * imp = package_import_passthrough(p->pkg, string_parse(filename.value), &error);
+  if (imp == NULL) {
+    parser_errorf(p, filename, "Exporting passthrough: ", "%s", error);
+    free(decl.items);
+    return -1;
+  }
+
+  char * header = NULL;
+  asprintf(&header, "#include \"%s\"", utils_relative(p->pkg->source_abs, imp->pkg->header_abs));
+  package_emit(p->pkg, header);
+
+  free(decl.items);
+  free(header);
   return 1;
 }
 
@@ -607,13 +654,17 @@ static lex_item_t parse_type (parser_t * p, decl_t * decl) {
 static lex_item_t parse_variable (parser_t * p, decl_t * decl) {
   lex_item_t item;
   lex_item_t name = {0};
-  int escaped_id = 0;
-  int log = 0;
+  bool escaped_id = 0;
+  bool escape_till_semicolon = false;
   do {
     item = collect(p, decl);
+    if (escape_till_semicolon && (item.type != item_symbol || item.value[0] != ';')) {
+      append(decl, item);
+      continue;
+    }
     switch(item.type) {
       case item_arrow:
-        escaped_id = 1;
+        escaped_id = true;
         append(decl, item);
         continue;
       case item_id:
@@ -621,12 +672,15 @@ static lex_item_t parse_variable (parser_t * p, decl_t * decl) {
           rewind_whitespace(p, decl, item);
           return name;
         }
-        if (strcmp(item.value, "extern") == 0) log = 1;
-        if (escaped_id == 0) item = parser_identifier_parse(p, item, true);
+        if (escaped_id == false) item = parser_identifier_parse(p, item, true);
         name = item;
         break;
       case item_symbol:
         if (item.value[0] == '*') break;
+        if (item.value[0] == '=') {
+          escape_till_semicolon = true;
+          break;
+        }
         if (item.value[0] == ';') {
           parser_backup(p, item);
           return name;
@@ -643,8 +697,23 @@ static lex_item_t parse_variable (parser_t * p, decl_t * decl) {
           rewind_until(p, decl, name);
           return parse_function(p, decl);
         }
+        if (item.value[0] == '[') {
+          append(decl, item);
+          item = parser_next(p);
+          if (item.type == item_number) {
+            append(decl, item);
+            item = parser_next(p);
+          }
+          if (item.type != item_close_symbol || item.value[0] != ']') {
+            return errorf(p, item, decl,
+                "in type declaration: expecting terminating ']' but got %s",
+                lex_item_to_string(item)
+            );
+          }
+          break;
+        }
       default:
-        return errorf(p, item, decl, "in type declaration: expecting identifier or '('");
+        return errorf(p, item, decl, "in type declaration: expecting identifier or '(' but got %s", lex_item_to_string(item));
     }
     append(decl, item);
   } while (item.type != item_eof);

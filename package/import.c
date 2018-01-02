@@ -1,6 +1,8 @@
 
+#define _GNU_SOURCE
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "../deps/hash/hash.h"
 
 #include <stdbool.h>
@@ -45,5 +47,21 @@ package_import_t * package_import_add_c_file(package_t * parent, char * filename
   imp->c_file   = true;
   imp->pkg      = package_c_file(alias, error);
 
+  return imp;
+}
+
+package_import_t * package_import_passthrough(package_t * parent, char * filename, char ** error) {
+  package_import_t * imp = package_import_add(filename, filename, parent, error);
+  if (*error != NULL) return NULL;
+  if (imp == NULL || imp->pkg == NULL) {
+    asprintf(error, "Could not import '%s'", filename);
+    return NULL;
+  }
+
+  hash_each(imp->pkg->exports, {
+    hash_set(parent->exports, strdup(key), val);
+  });
+
+  package_export_export_headers(parent, imp->pkg);
   return imp;
 }

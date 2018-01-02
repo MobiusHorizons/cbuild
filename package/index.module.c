@@ -99,7 +99,7 @@ export Package.t * parse(
 
   hash_set(Package.path_cache, key, p);
 
-  if (grammer.parse(input, rel, p, error) != 0) return NULL;
+  p->errors = grammer.parse(input, rel, p, error);
   return p;
 }
 

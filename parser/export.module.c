@@ -7,10 +7,13 @@ build depends "../deps/hash/hash.c";
 #include "../deps/hash/hash.h"
 
 import parser     from "./parser.module.c";
+import string     from "string.module.c";
+import utils      from "../utils/utils.module.c";
 import identifier from "./identifier.module.c";
 import lex_item   from "../lexer/item.module.c";
 import Package    from "../package/package.module.c";
 import pkg_export from "../package/export.module.c";
+import pkg_import from "../package/import.module.c";
 
 const lex_item.t enum_i   = { .value = "enum",   .length = strlen("enum"),   .type = item_id };
 const lex_item.t union_i  = { .value = "union",  .length = strlen("union"),  .type = item_id };
@@ -147,6 +150,8 @@ static lex_item.t parse_variable      (parser.t * p, decl_t * decl);
 static lex_item.t parse_function      (parser.t * p, decl_t * decl);
 static lex_item.t parse_function_args (parser.t * p, decl_t * decl);
 
+static int parse_passthrough (parser.t * p);
+
 static hash_t * export_types = NULL;
 static void init_export_types(){
   export_types = hash_new();
@@ -195,6 +200,9 @@ export int parse(parser.t * p) {
       has_semicolon = is_extern || fn != NULL;
       t = 1;
       break;
+    case item_symbol:
+      if (type.value[0] == '*') return parse_passthrough(p);
+      break;
     case item_open_symbol:
       if (type.value[0] == '{') {
         fn = parse_export_block;
@@ -241,6 +249,45 @@ export int parse(parser.t * p) {
   }
 
   pkg_export.add(name.value, alias.value, symbol.value, type.value, emit(p, &decl, t==2, is_extern), p->pkg);
+  return 1;
+}
+
+static int parse_passthrough(parser.t * p) {
+  decl_t decl = {0};
+  lex_item.t from = collect(p, &decl);
+  if (from.type != item_id || strcmp(from.value, "from") != 0) {
+    parser.errorf(p, from, "Exporting passthrough: ", "expected 'from', but got %s", lex_item.to_string(from));
+    global.free(decl.items);
+    return -1;
+  }
+
+  lex_item.t filename = collect(p, &decl);
+  if (filename.type != item_quoted_string) {
+    parser.errorf(p, filename, "Exporting passthrough: ", "expected filename, but got %s", lex_item.to_string(filename));
+    global.free(decl.items);
+    return -1;
+  }
+
+  parse_semicolon(p, &decl);
+  if (decl.error) {
+    global.free(decl.items);
+    return -1;
+  }
+
+  char * error = NULL;
+  pkg_import.t * imp = pkg_import.passthrough(p->pkg, string.parse(filename.value), &error);
+  if (imp == NULL) {
+    parser.errorf(p, filename, "Exporting passthrough: ", "%s", error);
+    global.free(decl.items);
+    return -1;
+  }
+
+  char * header = NULL;
+  asprintf(&header, "#include \"%s\"", utils.relative(p->pkg->source_abs, imp->pkg->header_abs));
+  Package.emit(p->pkg, header);
+
+  global.free(decl.items);
+  global.free(header);
   return 1;
 }
 
@@ -607,13 +654,17 @@ static lex_item.t parse_type (parser.t * p, decl_t * decl) {
 static lex_item.t parse_variable (parser.t * p, decl_t * decl) {
   lex_item.t item;
   lex_item.t name = {0};
-  int escaped_id = 0;
-  int log = 0;
+  bool escaped_id = 0;
+  bool escape_till_semicolon = false;
   do {
     item = collect(p, decl);
+    if (escape_till_semicolon && (item.type != item_symbol || item.value[0] != ';')) {
+      append(decl, item);
+      continue;
+    }
     switch(item.type) {
       case item_arrow:
-        escaped_id = 1;
+        escaped_id = true;
         append(decl, item);
         continue;
       case item_id:
@@ -621,12 +672,15 @@ static lex_item.t parse_variable (parser.t * p, decl_t * decl) {
           rewind_whitespace(p, decl, item);
           return name;
         }
-        if (strcmp(item.value, "extern") == 0) log = 1;
-        if (escaped_id == 0) item = identifier.parse(p, item, true);
+        if (escaped_id == false) item = identifier.parse(p, item, true);
         name = item;
         break;
       case item_symbol:
         if (item.value[0] == '*') break;
+        if (item.value[0] == '=') {
+          escape_till_semicolon = true;
+          break;
+        }
         if (item.value[0] == ';') {
           parser.backup(p, item);
           return name;
@@ -643,8 +697,23 @@ static lex_item.t parse_variable (parser.t * p, decl_t * decl) {
           rewind_until(p, decl, name);
           return parse_function(p, decl);
         }
+        if (item.value[0] == '[') {
+          append(decl, item);
+          item = parser.next(p);
+          if (item.type == item_number) {
+            append(decl, item);
+            item = parser.next(p);
+          }
+          if (item.type != item_close_symbol || item.value[0] != ']') {
+            return errorf(p, item, decl,
+                "in type declaration: expecting terminating ']' but got %s",
+                lex_item.to_string(item)
+            );
+          }
+          break;
+        }
       default:
-        return errorf(p, item, decl, "in type declaration: expecting identifier or '('");
+        return errorf(p, item, decl, "in type declaration: expecting identifier or '(' but got %s", lex_item.to_string(item));
     }
     append(decl, item);
   } while (item.type != item_eof);

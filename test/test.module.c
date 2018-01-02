@@ -4,14 +4,17 @@ package "main";
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include "../parser/colors.h"
 
-import Pkg     from "../package/index.module.c";
-import Package from "../package/package.module.c";
-import string  from "./string-stream.module.c";
-import stream  from "../deps/stream/stream.module.c";
+build depends "../deps/hash/hash.c";
+#include "../deps/hash/hash.h"
+
+import Pkg        from "../package/index.module.c";
+import Package    from "../package/package.module.c";
+import pkg_export from "../package/export.module.c";
+import string     from "./string-stream.module.c";
+import stream     from "../deps/stream/stream.module.c";
 
 #define LEN(array) (sizeof(array)/sizeof(array[0]))
 
@@ -39,7 +42,7 @@ static bool check_pkg_name(Package.t * pkg, struct test_case_s c, char * out, ch
   char * desired_name = (char *) c.data;
   bool passed = strcmp(pkg->name, desired_name) == 0;
   if (!passed) {
-    asprintf(error, "Incorrect Package Name: Got '%s' expected '%s'", pkg->name, desired_name);
+    asprintf(error, "Incorrect Package Name: Got '%s' expected '%s'\n", pkg->name, desired_name);
   }
   return passed;
 }
@@ -64,6 +67,26 @@ static test_case package[] = {
     .errors = 0,
   },
 };
+
+static bool check_pkg_exports(Package.t * pkg, struct test_case_s c, char * out, char ** error) {
+  char * should_export = (char *) c.data;
+  pkg_export.t * exp = (pkg_export.t*) hash_get(pkg->exports, should_export);
+  if (exp == NULL) {
+    stream.t * buf = string.new_writer();
+
+    hash_each(pkg->exports, {
+      pkg_export.t * exp = (pkg_export.t*)val;
+      stream.printf(buf, "\t%s: '%s',\n", exp->export_name, exp->symbol);
+    });
+
+    asprintf(error, "package '%s' did not export the expected symbol: '%s'.\n"
+                    "the following symbols are exported:\n%s",
+                    pkg->name, should_export, string.get_buffer(buf));
+    stream.close(buf);
+    return false;
+  }
+  return true;
+}
 
 static test_case exports[] = {
   {
@@ -111,7 +134,8 @@ static test_case exports[] = {
     .desc   = "It should export an enum",
     .input  = "export enum a { a, b, c, d, e, f };",
     .output = "enum export_a { a, b, c, d, e, f };",
-    .fn     = NULL,
+    .fn     = check_pkg_exports,
+    .data   = "a",
     .errors = 0,
   },
   {
@@ -164,6 +188,14 @@ static test_case exports[] = {
   },
   {
     .name   = "export.module.c",
+    .desc   = "It should export a static array of char",
+    .input  = "export static const char * names[] = { \"1\" };",
+    .output = "static const char * export_names[] = { \"1\" };",
+    .fn     = NULL,
+    .errors = 0,
+  },
+  {
+    .name   = "export.module.c",
     .desc   = "It should export  a typedef of function pointer",
     .input  = "export typedef int (*a)(int a1, int a2);",
     .output = "typedef int (*export_a)(int a1, int a2);",
@@ -208,6 +240,15 @@ static test_case exports[] = {
     .input  = "export typedef struct a { int a; } b as c;",
     .output = "typedef struct a { int a; } export_c;",
     .fn     = NULL,
+    .errors = 0,
+  },
+  {
+    .name   = "export.module.c",
+    .desc   = "It should export passthrough",
+    .input  = "export * from \"example.module.c\";",
+    .output = "#include \"example.h\"",
+    .fn     = check_pkg_exports,
+    .data   = "test2",
     .errors = 0,
   },
 };

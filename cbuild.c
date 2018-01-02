@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <libgen.h>
 #include "parser/colors.h"
@@ -20,6 +19,12 @@
 #include "utils/utils.h"
 #include "deps/stream/stream.h"
 
+static const char * ops[] = {
+  ":=",
+  "?=",
+  "+=",
+};
+
 void make(package_t * pkg, char * makefile) {
   if (pkg == NULL) return;
   char * target = basename(strdup(pkg->generated));
@@ -32,28 +37,10 @@ void make(package_t * pkg, char * makefile) {
   system(cmd);
 }
 
-char * write_c_deps(package_import_t* imp, package_t * root, stream_t * out, char * deps) {
-  if (root == NULL || imp == NULL) return deps;
-
-  char * source = utils_relative(root->generated, imp->alias);
-  char * object = strdup(source);
-  object[strlen(source) - 1] = 'o';
-
-  size_t len = deps == NULL ? 0 : strlen(deps);
-  deps = realloc(deps, len + strlen(object) + 2);
-  sprintf(deps + len, " %s", object);
-
-  stream_printf(out, "#dependencies for '%s'\n", utils_relative(root->source_abs, imp->alias));
-  stream_printf(out, "%s: %s\n\n", object, source);
-
-  return deps;
-}
-
 char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps) {
   if (pkg == NULL || pkg->exported) return deps;
   pkg->exported = true;
 
-  // TODO: write variables
   char * source = utils_relative(root->generated, pkg->generated);
   char * object = strdup(source);
   object[strlen(source) - 1] = 'o';
@@ -63,6 +50,13 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
   sprintf(deps + len, " %s", object);
 
   stream_printf(out, "#dependencies for package '%s'\n", utils_relative(root->source_abs, pkg->generated));
+
+  int i;
+  for (i = 0; i < pkg->n_variables; i++) {
+    package_var_t v = pkg->variables[i];
+    stream_printf(out, "%s %s %s\n", v.name, ops[v.operation], v.value);
+  }
+
   stream_printf(out, "%s: %s", object, source);
 
   if (pkg->deps == NULL) {
@@ -127,7 +121,7 @@ char * write_makefile(package_t * pkg, char * name) {
 int main(int argc, char ** argv){
   if (argc <= 1) {
     printf("no file specified\n");
-    return 1;
+    return -1;
   }
 
   char * error = NULL;
@@ -136,6 +130,7 @@ int main(int argc, char ** argv){
     fprintf(stderr, "%s\n", error);
     return 1;
   }
+  if (pkg == NULL || pkg->errors > 0) return -1;
 
   char * mkfile_name = write_makefile(pkg, argv[1]);
   make(pkg, mkfile_name);

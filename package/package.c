@@ -8,17 +8,32 @@
 
 #include "../deps/stream/stream.h"
 
+enum package_var_type {
+  build_var_set = 0,
+  build_var_set_default,
+  build_var_append,
+};
+
+typedef struct {
+  char * name;
+  char * value;
+  enum package_var_type operation;
+} package_var_t;
+
 typedef struct {
   hash_t   * deps;
   hash_t   * exports;
   hash_t   * symbols;
   void    ** ordered;
   size_t     n_exports;
+  package_var_t    * variables;
+  size_t     n_variables;
   char     * name;
   char     * source_abs;
   char     * source_rel;
   char     * generated;
   char     * header_abs;
+  size_t     errors;
   bool       exported;
   bool       c_file;
   stream_t * out;
