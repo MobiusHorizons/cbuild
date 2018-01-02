@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "../deps/stream/stream.h"
 #include "item.h"
 #include "buffer.h"
@@ -9,7 +10,6 @@
 
 #include <string.h>
 #include <stdarg.h>
-#define _GNU_SOURCE
 #include <stdio.h>
 
 struct lex_lexer_s;

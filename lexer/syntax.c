@@ -56,7 +56,7 @@ static void * lex_c(lex_t * lex) {
     if (c == 0)      return eof(lex);
     if (isspace(c))  return emit_c_code(lex, lex_whitespace);
     if (isalpha(c))  return emit_c_code(lex, lex_id);
-    if (isnumber(c)) return emit_c_code(lex, lex_number);
+    if (isdigit(c)) return emit_c_code(lex, lex_number);
 
     switch(c) {
       case '\'':
@@ -159,7 +159,7 @@ static void * lex_comment(lex_t * lex) {
 
 static void * lex_number(lex_t * lex) {
   char c;
-  while ((c = lex_next(lex)) != 0 && isnumber(c));
+  while ((c = lex_next(lex)) != 0 && isdigit(c));
   lex_backup(lex);
   lex_emit(lex, item_number);
 

@@ -1,7 +1,7 @@
+#define _GNU_SOURCE
 
 
 #include <stdlib.h>
-#define _GNU_SOURCE
 #include <stdio.h>
 #include "../deps/hash/hash.h"
 #include <stdbool.h>

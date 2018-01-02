@@ -1,8 +1,8 @@
 package "parser_identifier";
+#define _GNU_SOURCE
 
 build depends "../deps/hash/hash.c";
 #include "../deps/hash/hash.h"
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 export {

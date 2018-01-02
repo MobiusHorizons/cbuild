@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 import stream from "../deps/stream/stream.module.c";
 import item   from "./item.module.c";
 import buffer from "./buffer.module.c";
@@ -9,7 +10,6 @@ export {
 
 #include <string.h>
 #include <stdarg.h>
-#define _GNU_SOURCE
 #include <stdio.h>
 
 export struct lexer_s;

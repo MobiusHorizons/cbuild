@@ -56,7 +56,7 @@ static void * lex_c(lexer.t * lex) {
     if (c == 0)      return eof(lex);
     if (isspace(c))  return emit_c_code(lex, lex_whitespace);
     if (isalpha(c))  return emit_c_code(lex, lex_id);
-    if (isnumber(c)) return emit_c_code(lex, lex_number);
+    if (isdigit(c)) return emit_c_code(lex, lex_number);
 
     switch(c) {
       case '\'':
@@ -159,7 +159,7 @@ static void * lex_comment(lexer.t * lex) {
 
 static void * lex_number(lexer.t * lex) {
   char c;
-  while ((c = lexer.next(lex)) != 0 && isnumber(c));
+  while ((c = lexer.next(lex)) != 0 && isdigit(c));
   lexer.backup(lex);
   lexer.emit(lex, item_number);
 

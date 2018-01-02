@@ -1,8 +1,8 @@
 
+#define _GNU_SOURCE
 
 
 #include "../deps/hash/hash.h"
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 
