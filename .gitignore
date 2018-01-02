@@ -1,4 +1,6 @@
 *.o
 example.c
 example.h
+test/test
+cbuild
 

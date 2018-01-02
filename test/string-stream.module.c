@@ -1,5 +1,5 @@
 package "string_stream";
-import stream from "../../stream/stream.module.c";
+import stream from "../deps/stream/stream.module.c";
 
 #include <unistd.h>
 #include <stdlib.h>

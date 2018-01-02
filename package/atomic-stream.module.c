@@ -7,7 +7,7 @@ package "atomic_stream";
 #include <string.h>
 #include <fcntl.h>
 
-import stream from "../../stream/stream.module.c";
+import stream from "../deps/stream/stream.module.c";
 
 static int _type;
 

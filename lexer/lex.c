@@ -1,4 +1,4 @@
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 #include "item.h"
 #include "buffer.h"
 

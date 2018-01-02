@@ -17,7 +17,7 @@ import pkg_export from "package/export.module.c";
 import pkg_import from "package/import.module.c";
 import atomic     from "package/atomic-stream.module.c";
 import utils      from "utils/utils.module.c";
-import stream     from "../stream/stream.module.c";
+import stream     from "deps/stream/stream.module.c";
 
 void make(Package.t * pkg, char * makefile) {
   if (pkg == NULL) return;

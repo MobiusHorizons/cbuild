@@ -1,5 +1,5 @@
 
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 
 #include <unistd.h>
 #include <stdlib.h>

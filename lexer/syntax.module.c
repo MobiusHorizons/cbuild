@@ -4,7 +4,7 @@ package "lex_syntax";
 #include <string.h>
 
 import lexer  from "./lex.module.c";
-import stream from "../../stream/stream.module.c";
+import stream from "../deps/stream/stream.module.c";
 
 /* declaration for state functions */
 static void * lex_c(lexer.t * lex);

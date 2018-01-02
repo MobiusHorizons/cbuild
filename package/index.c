@@ -13,9 +13,9 @@
 #include "../parser/parser.h"
 #include "import.h"
 #include "export.h"
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 #include "atomic-stream.h"
-#include "../../stream/file.h"
+#include "../deps/stream/file.h"
 
 static void init_cache() {
   package_path_cache = hash_new();

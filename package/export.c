@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #include "package.h"
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 #include "atomic-stream.h"
 #include "../utils/utils.h"
 

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 
 #include "../lexer/item.h"
 #include "../lexer/lex.h"

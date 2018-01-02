@@ -9,8 +9,8 @@
 
 #include "../package/index.h"
 #include "../package/package.h"
-#include "./string-stream.h"
-#include "../../stream/stream.h"
+#include "string-stream.h"
+#include "../deps/stream/stream.h"
 
 #define LEN(array) (sizeof(array)/sizeof(array[0]))
 

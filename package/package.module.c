@@ -6,7 +6,7 @@ export {
 }
 #include <stdio.h>
 
-import stream from "../../stream/stream.module.c";
+import stream from "../deps/stream/stream.module.c";
 
 export typedef struct {
   hash_t   * deps;

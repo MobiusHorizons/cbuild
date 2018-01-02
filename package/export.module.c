@@ -6,7 +6,7 @@ package "package_export";
 #include <stdbool.h>
 
 import Package from "./package.module.c";
-import stream  from "../../stream/stream.module.c";
+import stream  from "../deps/stream/stream.module.c";
 import atomic  from "./atomic-stream.module.c";
 import utils   from "../utils/utils.module.c";
 build  depends      "../deps/hash/hash.c";

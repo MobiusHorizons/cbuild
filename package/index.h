@@ -7,7 +7,7 @@ char * index_generated_name(const char * path);
 
 package_t * index_new(const char * relative_path, char ** error);
 
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 
 package_t * index_parse(
     stream_t * input,

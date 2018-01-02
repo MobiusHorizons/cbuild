@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 
 typedef struct {
   hash_t   * deps;

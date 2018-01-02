@@ -8,7 +8,7 @@ struct lex_lexer_s;
 
 typedef void * (*lex_state_fn)(struct lex_lexer_s * lex);
 
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 #include "buffer.h"
 
 typedef struct lex_lexer_s{

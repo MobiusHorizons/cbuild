@@ -13,9 +13,9 @@ import grammer from "../parser/grammer.module.c";
 import parser  from "../parser/parser.module.c";
 import Import  from "./import.module.c";
 import Export  from "./export.module.c";
-import stream  from "../../stream/stream.module.c";
+import stream  from "../deps/stream/stream.module.c";
 import atomic  from "./atomic-stream.module.c";
-import file    from "../../stream/file.module.c";
+import file    from "../deps/stream/file.module.c";
 
 static void init_cache() {
   Package.path_cache = hash_new();

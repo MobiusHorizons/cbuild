@@ -7,7 +7,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 
 static int _type;
 

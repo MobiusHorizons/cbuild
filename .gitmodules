@@ -1,0 +1,3 @@
+[submodule "deps/stream"]
+	path = deps/stream
+	url = https://github.com/MobiusHorizons/stream_module.git

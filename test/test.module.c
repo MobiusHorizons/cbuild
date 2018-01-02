@@ -10,7 +10,7 @@ package "main";
 import Pkg     from "../package/index.module.c";
 import Package from "../package/package.module.c";
 import string  from "./string-stream.module.c";
-import stream  from "../../stream/stream.module.c";
+import stream  from "../deps/stream/stream.module.c";
 
 #define LEN(array) (sizeof(array)/sizeof(array[0]))
 

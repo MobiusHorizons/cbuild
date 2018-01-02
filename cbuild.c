@@ -17,7 +17,7 @@
 #include "package/import.h"
 #include "package/atomic-stream.h"
 #include "utils/utils.h"
-#include "../stream/stream.h"
+#include "deps/stream/stream.h"
 
 void make(package_t * pkg, char * makefile) {
   if (pkg == NULL) return;

@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "lex.h"
-#include "../../stream/stream.h"
+#include "../deps/stream/stream.h"
 
 /* declaration for state functions */
 static void * lex_c(lex_t * lex);

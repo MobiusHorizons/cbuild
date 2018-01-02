@@ -4,7 +4,7 @@ build depends "../deps/hash/hash.c";
 #include <stdio.h>
 #include <stdarg.h>
 
-import stream     from "../../stream/stream.module.c";
+import stream     from "../deps/stream/stream.module.c";
 
 import lex_item   from "../lexer/item.module.c";
 import lex        from "../lexer/lex.module.c";
