@@ -14,7 +14,7 @@ dist: cbuild
 	cd test && $(MAKE) CLEAN_test
 
 cbuild.mk:
-  cbuild cbuild.module.c
+	cbuild cbuild.module.c
 
 include cbuild.mk
 .PHONY: test
