@@ -9,6 +9,7 @@ export {
 
 #include <string.h>
 #include <stdarg.h>
+#define _GNU_SOURCE
 #include <stdio.h>
 
 export struct lexer_s;

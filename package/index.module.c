@@ -3,6 +3,7 @@ build depends "../deps/hash/hash.c";
 
 #include <stdlib.h>
 #include <string.h>
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>

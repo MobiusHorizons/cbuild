@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#define _GNU_SOURCE
 #include <stdio.h>
 
 struct lex_lexer_s;

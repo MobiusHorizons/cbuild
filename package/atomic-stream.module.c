@@ -2,6 +2,7 @@ package "atomic_stream";
 
 #include <unistd.h>
 #include <stdlib.h>
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
