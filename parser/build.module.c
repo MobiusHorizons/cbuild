@@ -1,5 +1,7 @@
-import parser    from "./parser.module.c";
-import lex_item  from "../lexer/item.module.c";
+import parser     from "./parser.module.c";
+import string     from "./string.module.c";
+import lex_item   from "../lexer/item.module.c";
+import pkg_import from "../package/import.module.c";
 
 build depends "../deps/hash/hash.c";
 #include "../deps/hash/hash.h"
@@ -64,6 +66,12 @@ static int parse_depends(parser.t * p) {
   }
 
   /*printf("build depends [%s];\n", filename.value);*/
+  char * error = NULL;
+  pkg_import.t * imp = pkg_import.add_c_file(p->pkg, string.parse(filename.value), &error);
+  if (imp == NULL) {
+    parser.errorf(p, filename, "", "Error adding dependency: %s", error);
+    return -1;
+  }
   return 1;
 }
 

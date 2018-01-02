@@ -62,7 +62,7 @@
 ../parser/identifier.o: ../parser/identifier.c ../deps/hash/hash.c ../lexer/item.h ../lexer/stack.h ../parser/parser.h ../package/package.h ../package/export.h ../package/import.h ../lexer/item.h ../parser/parser.h
 
 # dependencies for ../parser/build.c
-../parser/build.o: ../parser/build.c ../parser/parser.h ../lexer/item.h ../deps/hash/hash.c ../parser/parser.h
+../parser/build.o: ../parser/build.c ../parser/parser.h ../parser/string.h ../lexer/item.h ../package/import.h ../deps/hash/hash.c ../parser/parser.h
 
 # dependencies for ../../stream/file.c
 ../../stream/file.o: ../../stream/file.c ../../stream/stream.h ../../stream/stream.h
