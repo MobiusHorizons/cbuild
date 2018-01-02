@@ -1,11 +1,11 @@
 #dependencies for package 'cbuild.c'
-cbuild.o: cbuild.c ../stream/stream.h ../relative_path/relative_path.h package/package.h package/export.h package/import.h package/atomic-stream.h package/index.h
+cbuild.o: cbuild.c ../stream/stream.h utils/utils.h package/package.h package/export.h package/import.h package/atomic-stream.h package/index.h
 
 #dependencies for package '../stream/stream.c'
 ../stream/stream.o: ../stream/stream.c
 
-#dependencies for package '../relative_path/relative_path.c'
-../relative_path/relative_path.o: ../relative_path/relative_path.c
+#dependencies for package 'utils/utils.c'
+utils/utils.o: utils/utils.c
 
 #dependencies for package 'package/package.c'
 package/package.o: package/package.c ../stream/stream.h
@@ -14,7 +14,7 @@ package/package.o: package/package.c ../stream/stream.h
 deps/hash/hash.o: deps/hash/hash.c
 
 #dependencies for package 'package/export.c'
-package/export.o: package/export.c ../stream/stream.h package/atomic-stream.h ../relative_path/relative_path.h package/package.h
+package/export.o: package/export.c ../stream/stream.h utils/utils.h package/atomic-stream.h package/package.h
 
 #dependencies for package 'package/atomic-stream.c'
 package/atomic-stream.o: package/atomic-stream.c ../stream/stream.h
@@ -47,7 +47,7 @@ lexer/buffer.o: lexer/buffer.c lexer/item.h
 lexer/syntax.o: lexer/syntax.c lexer/lex.h ../stream/stream.h
 
 #dependencies for package 'parser/import.c'
-parser/import.o: parser/import.c package/import.h parser/string.h lexer/item.h ../relative_path/relative_path.h package/package.h parser/parser.h
+parser/import.o: parser/import.c package/import.h parser/string.h utils/utils.h lexer/item.h package/package.h parser/parser.h
 
 #dependencies for package 'parser/string.c'
 parser/string.o: parser/string.c
@@ -67,8 +67,8 @@ parser/build.o: parser/build.c package/import.h parser/string.h lexer/item.h par
 #dependencies for package '../stream/file.c'
 ../stream/file.o: ../stream/file.c ../stream/stream.h
 
-cbuild: cbuild.o ../stream/stream.o ../relative_path/relative_path.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o ../stream/file.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) cbuild.o ../stream/stream.o ../relative_path/relative_path.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o ../stream/file.o -o cbuild
+cbuild: cbuild.o ../stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o ../stream/file.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) cbuild.o ../stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o ../stream/file.o -o cbuild
 
 CLEAN_cbuild:
-	rm -rf cbuild cbuild.o ../stream/stream.o ../relative_path/relative_path.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o ../stream/file.o
+	rm -rf cbuild cbuild.o ../stream/stream.o utils/utils.o package/package.o deps/hash/hash.o package/export.o package/atomic-stream.o package/import.o package/index.o parser/grammer.o parser/parser.o lexer/stack.o lexer/item.o lexer/lex.o lexer/buffer.o lexer/syntax.o parser/import.o parser/string.o parser/export.o parser/identifier.o parser/package.o parser/build.o ../stream/file.o

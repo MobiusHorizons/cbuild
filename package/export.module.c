@@ -8,7 +8,7 @@ package "package_export";
 import Package from "./package.module.c";
 import stream  from "../../stream/stream.module.c";
 import atomic  from "./atomic-stream.module.c";
-import path    from "../../relative_path/relative_path.module.c";
+import utils   from "../utils/utils.module.c";
 build  depends      "../deps/hash/hash.c";
 
 export enum export_type {
@@ -119,7 +119,7 @@ export void export_headers(Package.t * pkg, Package.t * dep) {
   if (pkg == NULL || dep == NULL) return;
   write_headers(dep);
 
-  char * rel = path.relative(pkg->source_abs, dep->header_abs);
+  char * rel  = utils.relative(pkg->source_abs, dep->header_abs);
   char * decl = NULL;
   asprintf(&decl, "#include \"%s\"", rel);
 

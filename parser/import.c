@@ -7,7 +7,7 @@
 #include "../lexer/item.h"
 #include "../package/import.h"
 #include "../package/package.h"
-#include "../../relative_path/relative_path.h"
+#include "../utils/utils.h"
 
 static int errorf(parser_t * p, lex_item_t item, const char * fmt, ...) {
   va_list args;
@@ -45,7 +45,7 @@ int import_parse(parser_t * p) {
   if (error != NULL) return errorf(p, filename, error);
 
   lex_item_t include = alias;
-  char * rel = relative_path_relative(p->pkg->source_abs, imp->pkg->header_abs);
+  char * rel = utils_relative(p->pkg->source_abs, imp->pkg->header_abs);
   include.length = asprintf(&include.value, "#include \"%s\"", rel);
   package_emit(p->pkg, include.value);
 

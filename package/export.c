@@ -8,7 +8,7 @@
 #include "package.h"
 #include "../../stream/stream.h"
 #include "atomic-stream.h"
-#include "../../relative_path/relative_path.h"
+#include "../utils/utils.h"
 
 
 enum package_export_type {
@@ -119,7 +119,7 @@ void package_export_export_headers(package_t * pkg, package_t * dep) {
   if (pkg == NULL || dep == NULL) return;
   package_export_write_headers(dep);
 
-  char * rel = relative_path_relative(pkg->source_abs, dep->header_abs);
+  char * rel  = utils_relative(pkg->source_abs, dep->header_abs);
   char * decl = NULL;
   asprintf(&decl, "#include \"%s\"", rel);
 

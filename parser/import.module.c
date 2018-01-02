@@ -7,7 +7,7 @@ import string     from "./string.module.c";
 import lex_item   from "../lexer/item.module.c";
 import pkg_import from "../package/import.module.c";
 import Package    from "../package/package.module.c";
-import path       from "../../relative_path/relative_path.module.c";
+import utils      from "../utils/utils.module.c";
 
 static int errorf(parser.t * p, lex_item.t item, const char * fmt, ...) {
   va_list args;
@@ -45,7 +45,7 @@ export int parse(parser.t * p) {
   if (error != NULL) return errorf(p, filename, error);
 
   lex_item.t include = alias;
-  char * rel = path.relative(p->pkg->source_abs, imp->pkg->header_abs);
+  char * rel = utils.relative(p->pkg->source_abs, imp->pkg->header_abs);
   include.length = asprintf(&include.value, "#include \"%s\"", rel);
   Package.emit(p->pkg, include.value);
 

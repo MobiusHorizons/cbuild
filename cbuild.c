@@ -16,8 +16,8 @@
 #include "package/export.h"
 #include "package/import.h"
 #include "package/atomic-stream.h"
+#include "utils/utils.h"
 #include "../stream/stream.h"
-#include "../relative_path/relative_path.h"
 
 void make(package_t * pkg, char * makefile) {
   if (pkg == NULL) return;
@@ -34,7 +34,7 @@ void make(package_t * pkg, char * makefile) {
 char * write_c_deps(package_import_t* imp, package_t * root, stream_t * out, char * deps) {
   if (root == NULL || imp == NULL) return deps;
 
-  char * source = relative_path_relative(root->generated, imp->alias);
+  char * source = utils_relative(root->generated, imp->alias);
   char * object = strdup(source);
   object[strlen(source) - 1] = 'o';
 
@@ -42,7 +42,7 @@ char * write_c_deps(package_import_t* imp, package_t * root, stream_t * out, cha
   deps = realloc(deps, len + strlen(object) + 2);
   sprintf(deps + len, " %s", object);
 
-  stream_printf(out, "#dependencies for '%s'\n", relative_path_relative(root->source_abs, imp->alias));
+  stream_printf(out, "#dependencies for '%s'\n", utils_relative(root->source_abs, imp->alias));
   stream_printf(out, "%s: %s\n\n", object, source);
 
   return deps;
@@ -53,7 +53,7 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
   pkg->exported = true;
 
   // TODO: write variables
-  char * source = relative_path_relative(root->generated, pkg->generated);
+  char * source = utils_relative(root->generated, pkg->generated);
   char * object = strdup(source);
   object[strlen(source) - 1] = 'o';
 
@@ -61,7 +61,7 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
   deps = realloc(deps, len + strlen(object) + 2);
   sprintf(deps + len, " %s", object);
 
-  stream_printf(out, "#dependencies for package '%s'\n", relative_path_relative(root->source_abs, pkg->generated));
+  stream_printf(out, "#dependencies for package '%s'\n", utils_relative(root->source_abs, pkg->generated));
   stream_printf(out, "%s: %s", object, source);
 
   if (pkg->deps == NULL) {
@@ -72,7 +72,7 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
   hash_each(pkg->deps, {
       package_import_t * dep = (package_import_t *) val;
       if (dep && dep->pkg && dep->pkg->header_abs)
-        stream_printf(out, " %s", relative_path_relative(root->source_abs, dep->pkg->header_abs));
+        stream_printf(out, " %s", utils_relative(root->source_abs, dep->pkg->header_abs));
   });
   stream_printf(out,"\n\n");
 

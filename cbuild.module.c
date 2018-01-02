@@ -16,8 +16,8 @@ import Package    from "package/package.module.c";
 import pkg_export from "package/export.module.c";
 import pkg_import from "package/import.module.c";
 import atomic     from "package/atomic-stream.module.c";
+import utils      from "utils/utils.module.c";
 import stream     from "../stream/stream.module.c";
-import path       from "../relative_path/relative_path.module.c";
 
 void make(Package.t * pkg, char * makefile) {
   if (pkg == NULL) return;
@@ -34,7 +34,7 @@ void make(Package.t * pkg, char * makefile) {
 char * write_c_deps(pkg_import.t* imp, Package.t * root, stream.t * out, char * deps) {
   if (root == NULL || imp == NULL) return deps;
 
-  char * source = path.relative(root->generated, imp->alias);
+  char * source = utils.relative(root->generated, imp->alias);
   char * object = strdup(source);
   object[strlen(source) - 1] = 'o';
 
@@ -42,7 +42,7 @@ char * write_c_deps(pkg_import.t* imp, Package.t * root, stream.t * out, char * 
   deps = realloc(deps, len + strlen(object) + 2);
   sprintf(deps + len, " %s", object);
 
-  stream.printf(out, "#dependencies for '%s'\n", path.relative(root->source_abs, imp->alias));
+  stream.printf(out, "#dependencies for '%s'\n", utils.relative(root->source_abs, imp->alias));
   stream.printf(out, "%s: %s\n\n", object, source);
 
   return deps;
@@ -53,7 +53,7 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
   pkg->exported = true;
 
   // TODO: write variables
-  char * source = path.relative(root->generated, pkg->generated);
+  char * source = utils.relative(root->generated, pkg->generated);
   char * object = strdup(source);
   object[strlen(source) - 1] = 'o';
 
@@ -61,7 +61,7 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
   deps = realloc(deps, len + strlen(object) + 2);
   sprintf(deps + len, " %s", object);
 
-  stream.printf(out, "#dependencies for package '%s'\n", path.relative(root->source_abs, pkg->generated));
+  stream.printf(out, "#dependencies for package '%s'\n", utils.relative(root->source_abs, pkg->generated));
   stream.printf(out, "%s: %s", object, source);
 
   if (pkg->deps == NULL) {
@@ -72,7 +72,7 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
   hash_each(pkg->deps, {
       pkg_import.t * dep = (pkg_import.t *) val;
       if (dep && dep->pkg && dep->pkg->header_abs)
-        stream.printf(out, " %s", path.relative(root->source_abs, dep->pkg->header_abs));
+        stream.printf(out, " %s", utils.relative(root->source_abs, dep->pkg->header_abs));
   });
   stream.printf(out,"\n\n");
 
