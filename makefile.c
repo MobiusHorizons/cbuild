@@ -75,14 +75,14 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
     return deps;
   }
 
-  hash_each(pkg->deps, {
+  hash_each_val(pkg->deps, {
       package_import_t * dep = (package_import_t *) val;
       if (dep && dep->pkg && dep->pkg->header_abs)
         stream_printf(out, " %s", utils_relative(root->source_abs, dep->pkg->header_abs));
   });
   stream_printf(out,"\n\n");
 
-  hash_each(pkg->deps, {
+  hash_each_val(pkg->deps, {
       package_import_t * dep = (package_import_t *)val;
       deps = write_deps(dep->pkg, root, out, deps);
   });

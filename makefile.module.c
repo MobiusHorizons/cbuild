@@ -75,14 +75,14 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
     return deps;
   }
 
-  hash_each(pkg->deps, {
+  hash_each_val(pkg->deps, {
       pkg_import.t * dep = (pkg_import.t *) val;
       if (dep && dep->pkg && dep->pkg->header_abs)
         stream.printf(out, " %s", utils.relative(root->source_abs, dep->pkg->header_abs));
   });
   stream.printf(out,"\n\n");
 
-  hash_each(pkg->deps, {
+  hash_each_val(pkg->deps, {
       pkg_import.t * dep = (pkg_import.t *)val;
       deps = write_deps(dep->pkg, root, out, deps);
   });
