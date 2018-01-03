@@ -36,6 +36,8 @@ typedef struct {
   size_t     errors;
   bool       exported;
   bool       c_file;
+  bool       force;
+  bool       silent;
   stream_t * out;
 } package_t;
 

@@ -352,7 +352,7 @@ static bool run_test(test_case c) {
 
   asprintf(&key, "%s/%s", cwd, c.name);
   char * generated = Pkg.generated_name(key);
-  Package.t * p = Pkg.parse(in, out, c.name, key, generated, &error);
+  Package.t * p = Pkg.parse(in, out, c.name, key, generated, &error, false, false);
 
   char * buf = string.get_buffer(out);
   bool desired_output = buf && strcmp(buf, c.output) == 0;

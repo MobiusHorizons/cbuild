@@ -36,6 +36,8 @@ export typedef struct {
   size_t     errors;
   bool       exported;
   bool       c_file;
+  bool       force;
+  bool       silent;
   stream.t * out;
 } package_t as t;
 
@@ -45,7 +47,7 @@ hash_t * path_cache = NULL;
 hash_t * id_cache = NULL;
 
 /* TODO: fix the circrular dependency issue */
-export extern package_t * (*new)(const char * relative_path, char ** error);
+export extern package_t * (*new)(const char * relative_path, char ** error, bool force, bool silent);
 package_t * (*package_new)(const char * relative_path, char ** error) = NULL;
 
 export void emit(package_t * pkg, char * value) {

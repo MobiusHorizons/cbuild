@@ -72,15 +72,17 @@ export char * generated_name(const char * path) {
   return buffer;
 }
 
-export Package.t * new(const char * relative_path, char ** error);
+export Package.t * new(const char * relative_path, char ** error, bool force, bool silent);
 
 export Package.t * parse(
-    stream.t * input,
-    stream.t * out,
+    stream.t   * input,
+    stream.t   * out,
     const char * rel,
-    char * key,
-    char * generated,
-    char ** error
+    char       * key,
+    char       * generated,
+    char      ** error,
+    bool         force,
+    bool         silent
 ) {
   if (Package.path_cache == NULL) init_cache();
   if (Package.new        == NULL) Package.new = new;
@@ -96,6 +98,8 @@ export Package.t * parse(
   p->generated  = generated;
   p->out        = out;
   p->name       = package_name(p->generated);
+  p->force      = force;
+  p->silent     = silent;
 
 
   hash_set(Package.path_cache, key, p);
@@ -104,7 +108,7 @@ export Package.t * parse(
   return p;
 }
 
-Package.t * new(const char * relative_path, char ** error) {
+Package.t * new(const char * relative_path, char ** error, bool force, bool silent) {
   if (Package.path_cache == NULL) init_cache();
   if (Package.new        == NULL) Package.new = new;
 
@@ -127,7 +131,7 @@ Package.t * new(const char * relative_path, char ** error) {
 
   char * generated = generated_name(key);
   stream.t * out = NULL;
-  if (utils.newer(relative_path, generated)) {
+  if (force || (!silent && utils.newer(relative_path, generated))) {
     out = atomic.open(generated);
     if (out->error.code != 0) {
       if (error) *error = strdup(out->error.message);
@@ -135,7 +139,7 @@ Package.t * new(const char * relative_path, char ** error) {
     }
   }
 
-  Package.t * p = parse(input, out, relative_path, key, generated, error);
+  Package.t * p = parse(input, out, relative_path, key, generated, error, force, silent);
 
   if (p == NULL || *error != NULL) {
     if (out) atomic.abort(out);

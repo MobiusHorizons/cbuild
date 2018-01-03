@@ -72,15 +72,17 @@ char * index_generated_name(const char * path) {
   return buffer;
 }
 
-package_t * index_new(const char * relative_path, char ** error);
+package_t * index_new(const char * relative_path, char ** error, bool force, bool silent);
 
 package_t * index_parse(
-    stream_t * input,
-    stream_t * out,
+    stream_t   * input,
+    stream_t   * out,
     const char * rel,
-    char * key,
-    char * generated,
-    char ** error
+    char       * key,
+    char       * generated,
+    char      ** error,
+    bool         force,
+    bool         silent
 ) {
   if (package_path_cache == NULL) init_cache();
   if (package_new        == NULL) package_new = index_new;
@@ -96,6 +98,8 @@ package_t * index_parse(
   p->generated  = generated;
   p->out        = out;
   p->name       = package_name(p->generated);
+  p->force      = force;
+  p->silent     = silent;
 
 
   hash_set(package_path_cache, key, p);
@@ -104,7 +108,7 @@ package_t * index_parse(
   return p;
 }
 
-package_t * index_new(const char * relative_path, char ** error) {
+package_t * index_new(const char * relative_path, char ** error, bool force, bool silent) {
   if (package_path_cache == NULL) init_cache();
   if (package_new        == NULL) package_new = index_new;
 
@@ -127,7 +131,7 @@ package_t * index_new(const char * relative_path, char ** error) {
 
   char * generated = index_generated_name(key);
   stream_t * out = NULL;
-  if (utils_newer(relative_path, generated)) {
+  if (force || (!silent && utils_newer(relative_path, generated))) {
     out = atomic_stream_open(generated);
     if (out->error.code != 0) {
       if (error) *error = strdup(out->error.message);
@@ -135,7 +139,7 @@ package_t * index_new(const char * relative_path, char ** error) {
     }
   }
 
-  package_t * p = index_parse(input, out, relative_path, key, generated, error);
+  package_t * p = index_parse(input, out, relative_path, key, generated, error, force, silent);
 
   if (p == NULL || *error != NULL) {
     if (out) atomic_stream_abort(out);

@@ -27,7 +27,7 @@ package_import_t * package_import_add(char * alias, char * filename, package_t *
   imp->alias    = alias;
   imp->filename = filename;
   imp->c_file   = false;
-  imp->pkg      = package_new(filename, error);
+  imp->pkg      = package_new(filename, error, parent->force, parent->silent);
 
   if (imp->pkg == NULL) return NULL;
 

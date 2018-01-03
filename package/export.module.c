@@ -90,7 +90,7 @@ export void write_headers(Package.t * pkg) {
 
   pkg->header_abs = get_header_path(pkg->generated);
 
-  if (!utils.newer(pkg->source_abs, pkg->header_abs)) return;
+  if (pkg->force == false && (pkg->silent || !utils.newer(pkg->source_abs, pkg->header_abs))) return;
 
   stream.t * header = atomic.open(pkg->header_abs);
   stream.printf(header, "#ifndef _package_%s_\n" "#define _package_%s_\n\n", pkg->name, pkg->name);
@@ -106,7 +106,6 @@ export void write_headers(Package.t * pkg) {
       bool multiline = strchr(exp->declaration, '\n') != NULL;
 
       if (had_newline == false && (last_type != exp->type || multiline)) prefix = true;
-      /*if (had_newline == false && multiline) prefix = true;*/
       if (multiline) newline = true;
 
       stream.printf(header, "%s%s\n%s", prefix ? "\n" : "", exp->declaration, newline ? "\n" : "");

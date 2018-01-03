@@ -27,7 +27,7 @@ export Import_t * add(char * alias, char * filename, Package.t * parent, char **
   imp->alias    = alias;
   imp->filename = filename;
   imp->c_file   = false;
-  imp->pkg      = Package.new(filename, error);
+  imp->pkg      = Package.new(filename, error, parent->force, parent->silent);
 
   if (imp->pkg == NULL) return NULL;
 
