@@ -10,7 +10,7 @@ The syntax provides the following conveniences:
 See [syntax.md](./syntax.md) for module syntax documentation.
 
 # Version 2
-Version 2.0 of the project represents a complete, from scratch rewrite of the project using the modular `C` syntax. The project is self-hosted meaning it is used to compile itself, but the generated `C` source files are left in the repository so that it can be build with a simple `make`.
+Version 2.0 of the project represents a complete, from scratch rewrite of the project using the modular `C` syntax. The project is self-hosted meaning it is used to compile itself, but the generated `.c` `.h` and `.mk` files are left in the repository so that it can be built with a simple `make`.
 
 Version 2.0 brings a number of enhancements over the original.
 * Unit Tests - Not nearly everything is covered yet, but they exist and get built by Travis
