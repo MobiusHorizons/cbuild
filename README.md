@@ -46,7 +46,17 @@ this will generate the `cbuild` binary.
 
 # Usage:
 
-`cbuild <module>`
+`cbuild [command] [options] <module>`
+
+## Options:
+
+* -v         verbose
+
+## Commands:
+
+* build      generates source files and builds the module (default)
+* generate   generates source files
+* clean      clean all generated sources, object files, and executables
 
 the `module` is the source for either an executable or library you would like to turn into a c project.
 `cbuild` generates a `.c` and `.h` file for each module in the depencency tree of `module`. Furthermore it generates a
