@@ -24,28 +24,60 @@ static const char * ops[] = {
   "+=",
 };
 
+typedef struct {
+  char * makefile;
+  char * makefile_dir;
+  char * makefile_base;
+  char * target;
+  char * cwd;
+} makevars;
+
+makevars get_makevars(Package.t * pkg, char * makefile) {
+  makevars v = {
+    .makefile      = makefile,
+    .makefile_base = strdup(basename(makefile)),
+    .makefile_dir  = strdup(dirname(makefile)),
+    .target        = strdup(basename(pkg->generated)),
+    .cwd           = getcwd(NULL, 0),
+  };
+
+  char * ext = strrchr(v.target, '.');
+  *ext = 0;
+
+  chdir(v.makefile_dir);
+  return v;
+}
+
+int clear_makevars(makevars v, int result) {
+  chdir(v.cwd);
+
+  free(v.cwd);
+  free(v.target);
+  free(v.makefile_dir);
+  free(v.makefile_base);
+  free(v.makefile);
+
+  return result;
+}
+
 export int make(Package.t * pkg, char * makefile) {
   if (pkg == NULL) return -1;
-  char * target = basename(strdup(pkg->generated));
-  char * cmd;
-  asprintf(&cmd, "make -f %s %.*s", makefile, (int)(strlen(target) - 2), target);
+  makevars v = get_makevars(pkg, makefile);
 
-  global.free(makefile);
-  return system(cmd);
+  char * cmd;
+  asprintf(&cmd, "make -f %s %s", v.makefile_base,  v.target);
+
+  return clear_makevars(v, system(cmd));
 }
 
 export int clean(Package.t * pkg, char * makefile) {
   if (pkg == NULL) return -1;
-  char * target = basename(strdup(pkg->generated));
+  makevars v = get_makevars(pkg, makefile);
+
   char * cmd;
-  asprintf(&cmd, "make -f %s CLEAN_%.*s", makefile, (int)(strlen(target) - 2), target);
+  asprintf(&cmd, "make -f %s CLEAN_%s", v.makefile_base,  v.target);
 
-  int result = system(cmd);
-
-  printf("unlink: %s\n", makefile);
-  unlink(makefile);
-  global.free(makefile);
-  return result;
+  return clear_makevars(v, system(cmd));
 }
 
 char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps) {
@@ -77,8 +109,8 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
 
   hash_each_val(pkg->deps, {
       pkg_import.t * dep = (pkg_import.t *) val;
-      if (dep && dep->pkg && dep->pkg->header_abs)
-        stream.printf(out, " %s", utils.relative(root->source_abs, dep->pkg->header_abs));
+      if (dep && dep->pkg && dep->pkg->header)
+        stream.printf(out, " %s", utils.relative(root->source_abs, dep->pkg->header));
   });
   stream.printf(out,"\n\n");
 

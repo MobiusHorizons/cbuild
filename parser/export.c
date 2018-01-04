@@ -283,7 +283,7 @@ static int parse_passthrough(parser_t * p) {
   }
 
   char * header = NULL;
-  asprintf(&header, "#include \"%s\"", utils_relative(p->pkg->source_abs, imp->pkg->header_abs));
+  asprintf(&header, "#include \"%s\"", utils_relative(p->pkg->source_abs, imp->pkg->header));
   package_emit(p->pkg, header);
 
   free(decl.items);

@@ -30,9 +30,8 @@ typedef struct {
   size_t     n_variables;
   char     * name;
   char     * source_abs;
-  char     * source_rel;
   char     * generated;
-  char     * header_abs;
+  char     * header;
   size_t     errors;
   bool       exported;
   bool       c_file;
@@ -78,8 +77,7 @@ void package_free(package_t * pkg) {
 
   free(pkg->name);
   free(pkg->source_abs);
-  free(pkg->source_rel);
   free(pkg->generated);
-  free(pkg->header_abs);
+  free(pkg->header);
   free(pkg);
 }

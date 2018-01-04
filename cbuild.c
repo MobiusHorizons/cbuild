@@ -72,9 +72,9 @@ void clean_generated(package_t * pkg) {
     printf("unlink: %s\n", pkg->generated);
     unlink(pkg->generated);
   }
-  if (pkg->header_abs) {
-    printf("unlink: %s\n", pkg->header_abs);
-    unlink(pkg->header_abs);
+  if (pkg->header) {
+    printf("unlink: %s\n", pkg->header);
+    unlink(pkg->header);
   }
 
   hash_each_val(pkg->deps, {

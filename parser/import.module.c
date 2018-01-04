@@ -46,7 +46,7 @@ export int parse(parser.t * p) {
   if (error != NULL) return errorf(p, filename, error);
 
   lex_item.t include = alias;
-  char * rel = utils.relative(p->pkg->source_abs, imp->pkg->header_abs);
+  char * rel = utils.relative(p->pkg->source_abs, imp->pkg->header);
   include.length = asprintf(&include.value, "#include \"%s\"", rel);
   Package.emit(p->pkg, include.value);
 

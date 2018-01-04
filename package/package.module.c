@@ -30,9 +30,8 @@ export typedef struct {
   size_t     n_variables;
   char     * name;
   char     * source_abs;
-  char     * source_rel;
   char     * generated;
-  char     * header_abs;
+  char     * header;
   size_t     errors;
   bool       exported;
   bool       c_file;
@@ -78,8 +77,7 @@ export void free(package_t * pkg) {
 
   global.free(pkg->name);
   global.free(pkg->source_abs);
-  global.free(pkg->source_rel);
   global.free(pkg->generated);
-  global.free(pkg->header_abs);
+  global.free(pkg->header);
   global.free(pkg);
 }

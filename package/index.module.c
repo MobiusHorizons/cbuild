@@ -93,7 +93,6 @@ export Package.t * parse(
   p->ordered    = NULL;
   p->n_exports  = 0;
   p->symbols    = hash_new();
-  p->source_rel = strdup(rel);
   p->source_abs = key;
   p->generated  = generated;
   p->out        = out;

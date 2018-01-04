@@ -86,13 +86,13 @@ static char * get_header_path(char * generated) {
 #define B(a) (a ? "true" : "false")
 
 void package_export_write_headers(package_t * pkg) {
-  if (pkg->header_abs) return;
+  if (pkg->header) return;
 
-  pkg->header_abs = get_header_path(pkg->generated);
+  pkg->header = get_header_path(pkg->generated);
 
-  if (pkg->force == false && (pkg->silent || !utils_newer(pkg->source_abs, pkg->header_abs))) return;
+  if (pkg->force == false && (pkg->silent || !utils_newer(pkg->source_abs, pkg->header))) return;
 
-  stream_t * header = atomic_stream_open(pkg->header_abs);
+  stream_t * header = atomic_stream_open(pkg->header);
   stream_printf(header, "#ifndef _package_%s_\n" "#define _package_%s_\n\n", pkg->name, pkg->name);
 
   enum package_export_type last_type;
@@ -121,7 +121,7 @@ void package_export_export_headers(package_t * pkg, package_t * dep) {
   if (pkg == NULL || dep == NULL) return;
   package_export_write_headers(dep);
 
-  char * rel  = utils_relative(pkg->source_abs, dep->header_abs);
+  char * rel  = utils_relative(pkg->source_abs, dep->header);
   char * decl = NULL;
   asprintf(&decl, "#include \"%s\"", rel);
 
