@@ -42,7 +42,7 @@ makevars get_makevars(package_t * pkg, char * makefile) {
   };
 
   char * ext = strrchr(v.target, '.');
-  if (strcmp(pkg->name, "main") == true){
+  if (strcmp(pkg->name, "main") == 0){
     *ext = 0;
   } else {
     ext[1] = 'a';
