@@ -42,7 +42,11 @@ makevars get_makevars(Package.t * pkg, char * makefile) {
   };
 
   char * ext = strrchr(v.target, '.');
-  *ext = 0;
+  if (strcmp(pkg->name, "main") == true){
+    *ext = 0;
+  } else {
+    ext[1] = 'a';
+  }
 
   chdir(v.makefile_dir);
   return v;
