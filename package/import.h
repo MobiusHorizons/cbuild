@@ -6,10 +6,10 @@
 #include "package.h"
 
 typedef struct {
-  char      * alias;
-  char      * filename;
-  bool        c_file;
-  package_t * pkg;
+	char      * alias;
+	char      * filename;
+	bool        c_file;
+	package_t * pkg;
 } package_import_t;
 
 package_import_t * package_import_add(char * alias, char * filename, package_t * parent, char ** error);

@@ -12,17 +12,17 @@ typedef void * (*lex_state_fn)(struct lex_lexer_s * lex);
 #include "buffer.h"
 
 typedef struct lex_lexer_s{
-  stream_t * in;
-  char     * input;
-  char     * filename;
-  size_t     length;
-  size_t     start;
-  size_t     pos;
-  size_t     width;
-  size_t     line;
-  size_t     line_pos;
-  lex_buffer_t * items;
-  lex_state_fn   state;
+	stream_t * in;
+	char     * input;
+	char     * filename;
+	size_t     length;
+	size_t     start;
+	size_t     pos;
+	size_t     width;
+	size_t     line;
+	size_t     line_pos;
+	lex_buffer_t * items;
+	lex_state_fn   state;
 } lex_t;
 
 lex_t * lex_new(lex_state_fn start, stream_t * in, const char * filename);

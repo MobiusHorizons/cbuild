@@ -4,31 +4,31 @@
 #include <stdbool.h>
 
 typedef struct {
-  const char * description;
-  const char * long_name;
-  const char * short_name;
-  bool   required;
+	const char * description;
+	const char * long_name;
+	const char * short_name;
+	bool   required;
 } cli_flag_options;
 
 typedef struct {
-  void       * cb;
-  void       * ctx;
-  char       * name;
-  const char * description;
+	void       * cb;
+	void       * ctx;
+	char       * name;
+	const char * description;
 } cli_cmd_t;
 
 typedef struct {
-  hash_t      * flags;
-  hash_t      * commands;
-  cli_cmd_t       * default_command;
+	hash_t      * flags;
+	hash_t      * commands;
+	cli_cmd_t       * default_command;
 
-  bool          has_commands;
+	bool          has_commands;
 
-  const char  * usage;
-  const char  * name;
+	const char  * usage;
+	const char  * name;
 
-  int           argc;
-  const char ** argv;
+	int           argc;
+	const char ** argv;
 } cli_t;
 
 typedef int (*cli_cmd_cb)(cli_t * cli, char * cmd, void * ctx);

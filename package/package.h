@@ -6,37 +6,37 @@
 #include <stdbool.h>
 
 enum package_var_type {
-  build_var_set = 0,
-  build_var_set_default,
-  build_var_append,
+	build_var_set = 0,
+	build_var_set_default,
+	build_var_append,
 };
 
 typedef struct {
-  char * name;
-  char * value;
-  enum package_var_type operation;
+	char * name;
+	char * value;
+	enum package_var_type operation;
 } package_var_t;
 
 #include "../deps/stream/stream.h"
 
 typedef struct {
-  hash_t   * deps;
-  hash_t   * exports;
-  hash_t   * symbols;
-  void    ** ordered;
-  size_t     n_exports;
-  package_var_t    * variables;
-  size_t     n_variables;
-  char     * name;
-  char     * source_abs;
-  char     * generated;
-  char     * header;
-  size_t     errors;
-  bool       exported;
-  bool       c_file;
-  bool       force;
-  bool       silent;
-  stream_t * out;
+	hash_t   * deps;
+	hash_t   * exports;
+	hash_t   * symbols;
+	void    ** ordered;
+	size_t     n_exports;
+	package_var_t    * variables;
+	size_t     n_variables;
+	char     * name;
+	char     * source_abs;
+	char     * generated;
+	char     * header;
+	size_t     errors;
+	bool       exported;
+	bool       c_file;
+	bool       force;
+	bool       silent;
+	stream_t * out;
 } package_t;
 
 extern hash_t * package_path_cache;

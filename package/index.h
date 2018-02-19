@@ -10,14 +10,14 @@ package_t * index_new(const char * relative_path, char ** error, bool force, boo
 #include "../deps/stream/stream.h"
 
 package_t * index_parse(
-    stream_t   * input,
-    stream_t   * out,
-    const char * rel,
-    char       * key,
-    char       * generated,
-    char      ** error,
-    bool         force,
-    bool         silent
+		stream_t   * input,
+		stream_t   * out,
+		const char * rel,
+		char       * key,
+		char       * generated,
+		char      ** error,
+		bool         force,
+		bool         silent
 );
 
 #endif

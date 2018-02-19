@@ -6,9 +6,9 @@
 #include "item.h"
 
 typedef struct {
-  lex_item_t  * items;
-  size_t        capacity;
-  size_t        length;
+	lex_item_t  * items;
+	size_t        capacity;
+	size_t        length;
 } lex_item_stack_t;
 
 lex_item_stack_t * lex_item_stack_new(size_t count);

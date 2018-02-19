@@ -13,11 +13,11 @@ typedef void * (*parser_parse_fn)(struct parser_parser_s * lex);
 #include "../package/package.h"
 
 typedef struct parser_parser_s {
-  lex_t        * lexer;
-  parser_parse_fn       state;
-  lex_item_stack_t      * items;
-  package_t    * pkg;
-  int            errors;
+	lex_t        * lexer;
+	parser_parse_fn       state;
+	lex_item_stack_t      * items;
+	package_t    * pkg;
+	int            errors;
 } parser_t;
 
 int parser_parse(lex_t * lexer, parser_parse_fn start, package_t * pkg);

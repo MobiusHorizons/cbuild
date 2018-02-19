@@ -6,10 +6,10 @@
 #include "item.h"
 
 typedef struct {
-  lex_item_t  * items;
-  size_t        capacity;
-  size_t        length;
-  size_t        cursor;
+	lex_item_t  * items;
+	size_t        capacity;
+	size_t        length;
+	size_t        cursor;
 } lex_buffer_t;
 
 lex_buffer_t * lex_buffer_new(size_t count);
