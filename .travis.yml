@@ -13,4 +13,3 @@ script:
   - cd test
   - ../cbuild test.module.c
   - ./test
-

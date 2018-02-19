@@ -1,5 +1,3 @@
-#define _BSD_SOURCE
-#define _GNU_SOURCE
 #define VERSION "v2.0.0"
 
 
@@ -8,6 +6,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+
 
 
 

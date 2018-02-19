@@ -1,5 +1,3 @@
-#define _BSD_SOURCE
-#define _GNU_SOURCE
 #define VERSION "v2.0.0"
 
 package "main";
@@ -10,6 +8,8 @@ package "main";
 #include <unistd.h>
 
 build append CFLAGS "-std=c99";
+build append CFLAGS "-D_DEFAULT_SOURCE";
+build append CFLAGS "-D_GNU_SOURCE";
 
 import Pkg        from "package/index.module.c";
 import Package    from "package/package.module.c";

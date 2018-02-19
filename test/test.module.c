@@ -1,5 +1,3 @@
-#define _BSD_SOURCE
-#define _GNU_SOURCE
 package "main";
 
 #include <stdio.h>
@@ -9,6 +7,9 @@ package "main";
 #include "../parser/colors.h"
 
 build append CFLAGS "-std=c99";
+build append CFLAGS "-D_DEFAULT_SOURCE";
+build append CFLAGS "-D_GNU_SOURCE";
+
 build depends "../deps/hash/hash.c";
 #include "../deps/hash/hash.h"
 

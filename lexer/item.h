@@ -40,6 +40,7 @@ extern const lex_item_t lex_item_empty;
 lex_item_t lex_item_new(char * value, enum lex_item_type type, size_t line, size_t line_pos, size_t start);
 char * lex_item_to_string(lex_item_t item);
 bool lex_item_equals(lex_item_t a, lex_item_t b);
+lex_item_t lex_item_dup(lex_item_t a);
 void lex_item_free(lex_item_t item);
 
 #endif

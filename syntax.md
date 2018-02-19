@@ -133,5 +133,3 @@ LIBRARY_INCLUDE_DIR ?= "/path/to/default"
 
 `build depends` will add the `file.o` to the dependencies of the current module, so it will be included in the build of
 the final executable.
-
-
