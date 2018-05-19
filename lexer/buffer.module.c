@@ -29,22 +29,31 @@ export item_buffer_t * resize(item_buffer_t * b, size_t count) {
 		return b;
 	}
 
-	b->items = realloc(b->items, count * sizeof(lex_item.t));
+	lex_item.t * items = malloc(count * sizeof(lex_item.t));
 
-	if (b->cursor > 0 && b->length + b->cursor > b->capacity) {
-		int i;
-		for (i = 0; i < (count - b->capacity); i++) {
-			b->items[i + b->capacity] = b->items[i];
+
+	int i;
+	if (count > b->length) {
+		for (i = 0; i < b->length; i++) {
+			items[i] = b->items[(i + b->cursor) % b->capacity];
+		}
+	} else {
+		// on shrink drop items from the end
+		for (i = 0; i < count; i++) {
+			items[i] = b->items[(i + b->cursor) % b->capacity];
 		}
 	}
 
+	free(b->items);
+	b->items = items;
 	b->capacity = count;
+	b->cursor = 0;
+
 	return b;
 }
 
 export item_buffer_t * push(item_buffer_t * b, lex_item.t item) {
 	b = resize(b, b->length + 1);
-
 	size_t last = (b->length + b->cursor) % b->capacity;
 
 	b->items[last] = item;

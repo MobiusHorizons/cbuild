@@ -11,11 +11,16 @@
 
 
 
+
+
+
+
 #include "../deps/hash/hash.h"
 
 #include "../package/index.h"
 #include "../package/package.h"
 #include "../package/export.h"
+#include "../lexer/item.h"
 #include "string-stream.h"
 #include "../deps/stream/stream.h"
 
@@ -354,17 +359,20 @@ static bool run_test(test_case c) {
   asprintf(&key, "%s/%s", cwd, c.name);
   char * generated = index_generated_name(key);
   package_t * p = index_parse(in, out, c.name, key, generated, &error, false, false);
+  lex_item_unfreed();
 
   char * buf = string_stream_get_buffer(out);
   bool desired_output = buf && strcmp(buf, c.output) == 0;
   bool function_test  = c.fn ? c.fn(p, c, buf, &fn_err) : true;
+
+  index_free(p);
 
   if (error) {
     printf(RED    "%s\n" RESET, error);
   }
   if ( desired_output && function_test) {
     printf(GREEN "✓ " RESET BOLD "%s: \n" RESET, c.desc); fflush(stdout);
-    stream_close(out);
+	stream_close(out);
     return true;
   }
 

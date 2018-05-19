@@ -31,12 +31,22 @@ typedef struct {
 	bool             has_value;
 } flag_t;
 
+static void flag_free(flag_t * f) {
+	free(f->long_name);
+	free(f);
+}
+
 typedef struct {
 	void       * cb;
 	void       * ctx;
 	char       * name;
 	const char * description;
 } cli_cmd_t;
+
+static void cmd_free(cli_cmd_t * c) {
+	free(c->name);
+	free(c);
+}
 
 typedef struct {
 	hash_t      * flags;
@@ -226,4 +236,21 @@ int cli_parse(cli_t * cli, int argc, const char ** argv) {
 	int result = cb(cli, cmd->name, cmd->ctx);
 	if (result == 0) return result;
 	return cli_usage(cli);
+}
+
+void cli_free(cli_t * cli) {
+	hash_each(cli->flags, {
+		if (key[0] == '-' && key[1] == '-') {
+			flag_free(val);
+		}
+	});
+	hash_free(cli->flags);
+
+	hash_each_val(cli->commands, {
+		cmd_free(val);
+	});
+	hash_free(cli->commands);
+
+	free(cli->argv);
+	free(cli);
 }

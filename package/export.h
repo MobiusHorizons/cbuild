@@ -11,16 +11,17 @@ enum package_export_type {
 	type_header,
 };
 
-#include "package.h"
-
 typedef struct {
 	char      * local_name;
 	char      * export_name;
 	char      * declaration;
 	char      * symbol;
 	enum package_export_type   type;
-	package_t * pkg;
 } package_export_t;
+
+void package_export_free(package_export_t * exp);
+
+#include "package.h"
 
 char * package_export_add(char * local, char * alias, char * symbol, char * type, char * declaration, package_t * parent);
 void package_export_write_headers(package_t * pkg);

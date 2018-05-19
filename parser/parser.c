@@ -40,6 +40,7 @@ int parser_parse(lex_t * lexer, parser_parse_fn start, package_t * pkg) {
 	free(directory);
 
 	while (p->state != NULL) p->state = (parser_parse_fn) p->state(p);
+
 	lex_free(lexer);
 	lex_item_stack_free(p->items);
 
@@ -80,9 +81,10 @@ lex_item_t parser_skip(parser_t * p, ...) {
 	} while (types[len-1] != 0);
 	len--;
 
-	lex_item_t item;
+	lex_item_t item = {0};
 	do {
 		int do_skip = 0;
+		lex_item_free(item);
 		item = parser_next(p);
 		for ( i = 0; i < len; i++) {
 			if (types[i] == item.type) {

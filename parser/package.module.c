@@ -2,6 +2,7 @@ package "parser_package";
 import parser    from "./parser.module.c";
 import lex_item  from "../lexer/item.module.c";
 import string     from "./string.module.c";
+import str        from "../utils/strings.module.c";
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -24,7 +25,10 @@ export int parse(parser.t * p) {
 	if (semicolon.type != item_symbol && semicolon.value[0] != ';') {
 		return errorf(p, semicolon, "Expecting ';' got %s", lex_item.to_string(semicolon));
 	}
+	lex_item.free(semicolon);
 
-	p->pkg->name = string.parse(name.value);
+	global.free(p->pkg->name);
+	p->pkg->name = str.dup(string.parse(name.value));
+	lex_item.free(name);
 	return 1;
 }

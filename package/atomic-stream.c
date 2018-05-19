@@ -76,6 +76,7 @@ stream_t * atomic_stream_open(const char * _dest) {
 	do {
 		temp = get_temp(dest);
 		fd   = open(temp, O_WRONLY | O_CREAT | O_EXCL, 0666);
+		if (fd == -1 && errno == EEXIST) free(temp);
 	} while(fd == -1 && errno == EEXIST);
 
 	if ( fd < 0 ) {
@@ -87,7 +88,7 @@ stream_t * atomic_stream_open(const char * _dest) {
 	context_t * ctx = malloc(sizeof(context_t));
 	ctx->fd   = fd;
 	ctx->temp = temp;
-	ctx->dest = strdup(dest);
+	ctx->dest = dest;
 
 	stream_t * s = malloc(sizeof(stream_t));
 

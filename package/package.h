@@ -44,6 +44,5 @@ extern hash_t * package_id_cache;
 extern package_t * (*package_new)(const char * relative_path, char ** error, bool force, bool silent);
 void package_emit(package_t * pkg, char * value);
 package_t * package_c_file(char * abs_path, char ** error);
-void package_free(package_t * pkg);
 
 #endif

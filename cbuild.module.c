@@ -12,6 +12,7 @@ build append CFLAGS "-D_DEFAULT_SOURCE";
 build append CFLAGS "-D_GNU_SOURCE";
 
 import Pkg        from "package/index.module.c";
+import lex_item   from "lexer/item.module.c";
 import Package    from "package/package.module.c";
 import pkg_import from "package/import.module.c";
 import makefile   from "makefile.module.c";
@@ -20,8 +21,9 @@ import cli        from "cli.module.c";
 Package.t * generate(const char * filename, bool force, bool no_output) {
   char * error = NULL;
   Package.t * pkg = Pkg.new(filename, &error, force, no_output);
+  lex_item.unfreed();
 
-  if (pkg == NULL || pkg->errors > 0) return NULL;
+  /*if (pkg == NULL || pkg->errors > 0) return NULL;*/
 
   if (error != NULL) {
     fprintf(stderr, "%s\n", error);
@@ -115,5 +117,7 @@ int main(int argc, const char ** argv){
   cli.command(c, "generate", do_generate, "generate .c .h and .mk files", false, &options);
   cli.command(c, "clean",    do_clean,    "clean generated files",        false, &options);
 
-  return cli.parse(c, argc, argv);
+  int result = cli.parse(c, argc, argv);
+  cli.free(c);
+  return result;
 }

@@ -67,17 +67,3 @@ package_t * package_c_file(char * abs_path, char ** error) {
 	hash_set(package_path_cache, abs_path, pkg);
 	return pkg;
 }
-
-void package_free(package_t * pkg) {
-	if (pkg == NULL) return;
-
-	hash_clear(pkg->deps);
-	hash_clear(pkg->exports);
-	hash_clear(pkg->symbols);
-
-	free(pkg->name);
-	free(pkg->source_abs);
-	free(pkg->generated);
-	free(pkg->header);
-	free(pkg);
-}

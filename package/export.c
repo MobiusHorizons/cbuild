@@ -9,6 +9,7 @@
 #include "../deps/stream/stream.h"
 #include "atomic-stream.h"
 #include "../utils/utils.h"
+#include "../utils/strings.h"
 
 
 enum package_export_type {
@@ -37,8 +38,22 @@ typedef struct {
 	char      * declaration;
 	char      * symbol;
 	enum package_export_type   type;
-	package_t * pkg;
 } package_export_t;
+
+void package_export_free(package_export_t * exp) {
+	if (exp == NULL) return;
+
+	if (exp->local_name == exp->export_name) {
+		free(exp->local_name);
+	} else {
+		free(exp->local_name);
+		free(exp->export_name);
+	}
+	free(exp->declaration);
+
+	free(exp->symbol);
+	free(exp);
+}
 
 static hash_t * types = NULL;
 static void init_types() {
@@ -53,21 +68,31 @@ static void init_types() {
 }
 
 char * package_export_add(char * local, char * alias, char * symbol, char * type, char * declaration, package_t * parent) {
+	char * export_name = alias == NULL ? local : alias; 
+	if (hash_has(parent->exports, export_name)) {
+		free(local);
+		free(alias);
+		free(symbol);
+		free(declaration);
+		return export_name;
+	}
+
 	if (types == NULL) init_types();
 
 	package_export_t * exp = malloc(sizeof(package_export_t));
 
 	exp->local_name  = local;
-	exp->export_name = alias == NULL ? local : alias;
+	exp->export_name = export_name;
 	exp->declaration = declaration;
 	exp->type        = (enum package_export_type) hash_get(types, type);
 	exp->symbol      = symbol;
 
-	if (!hash_has(parent->exports, exp->export_name)) {
-		parent->ordered = realloc(parent->ordered, sizeof(void*) * (parent->n_exports + 1));
-		parent->ordered[parent->n_exports] = exp;
-		parent->n_exports ++;
-	}
+	parent->ordered = realloc(
+		parent->ordered,
+		sizeof(void*) * (parent->n_exports + 1)
+	);
+	parent->ordered[parent->n_exports] = exp;
+	parent->n_exports ++;
 
 	hash_set(parent->exports, exp->export_name, exp);
 	hash_set(parent->symbols, exp->local_name,  exp);
@@ -76,8 +101,8 @@ char * package_export_add(char * local, char * alias, char * symbol, char * type
 }
 
 static char * get_header_path(char * generated) {
-	char * header = strdup(generated);
-	size_t len = strlen(header);
+	char * header = strings_dup(generated);
+	size_t len = strings_len(header);
 	header[len - 1] = 'h';
 	return header;
 }
@@ -124,6 +149,6 @@ void package_export_export_headers(package_t * pkg, package_t * dep) {
 	char * decl = NULL;
 	asprintf(&decl, "#include \"%s\"", rel);
 
-	package_export_add(strdup(rel), NULL, strdup(""), "header", decl, pkg);
+	package_export_add(strings_dup(rel), NULL, strings_dup(""), "header", decl, pkg);
 	free(rel);
 }

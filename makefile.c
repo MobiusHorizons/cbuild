@@ -49,7 +49,7 @@ makevars get_makevars(package_t * pkg, char * makefile) {
 	return v;
 }
 
-int clear_makevars(makevars v, int result) {
+int clear_makevars(makevars v, int result, char * cmd) {
 	chdir(v.cwd);
 
 	free(v.cwd);
@@ -57,6 +57,7 @@ int clear_makevars(makevars v, int result) {
 	free(v.makefile_dir);
 	free(v.makefile_base);
 	free(v.makefile);
+	free(cmd);
 
 	return result;
 }
@@ -68,7 +69,7 @@ int makefile_make(package_t * pkg, char * makefile) {
 	char * cmd;
 	asprintf(&cmd, "make -f %s %s", v.makefile_base,  v.target);
 
-	return clear_makevars(v, system(cmd));
+	return clear_makevars(v, system(cmd), cmd);
 }
 
 int makefile_clean(package_t * pkg, char * makefile) {
@@ -78,7 +79,7 @@ int makefile_clean(package_t * pkg, char * makefile) {
 	char * cmd;
 	asprintf(&cmd, "make -f %s CLEAN_%s", v.makefile_base,  v.target);
 
-	return clear_makevars(v, system(cmd));
+	return clear_makevars(v, system(cmd), cmd);
 }
 
 char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps) {
@@ -93,7 +94,9 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
 	deps = realloc(deps, len + strlen(object) + 2);
 	sprintf(deps + len, " %s", object);
 
-	stream_printf(out, "#dependencies for package '%s'\n", utils_relative(root->source_abs, pkg->generated));
+	char * package_rel = utils_relative(root->source_abs, pkg->generated);
+	stream_printf(out, "#dependencies for package '%s'\n", package_rel);
+	free(package_rel);
 
 	int i;
 	for (i = 0; i < pkg->n_variables; i++) {
@@ -102,6 +105,8 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
 	}
 
 	stream_printf(out, "%s: %s", object, source);
+	free(source);
+	free(object);
 
 	if (pkg->deps == NULL) {
 	stream_printf(out,"\n\n");
@@ -110,8 +115,11 @@ char * write_deps(package_t * pkg, package_t * root, stream_t * out, char * deps
 
 	hash_each_val(pkg->deps, {
 			package_import_t * dep = (package_import_t *) val;
-			if (dep && dep->pkg && dep->pkg->header)
-				stream_printf(out, " %s", utils_relative(root->source_abs, dep->pkg->header));
+			if (dep && dep->pkg && dep->pkg->header) {
+				char * path = utils_relative(root->source_abs, dep->pkg->header);
+				stream_printf(out, " %s", path);
+				free(path);
+			}
 	});
 	stream_printf(out,"\n\n");
 
@@ -155,6 +163,7 @@ char * makefile_write(package_t * pkg, const char * name) {
 
 	stream_printf(mkfile, "CLEAN_%s:\n", target);
 	stream_printf(mkfile, "\trm -rf %s%s\n", target, deps);
+	free(target);
 
 	stream_close(mkfile);
 	free(deps);

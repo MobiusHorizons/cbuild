@@ -20,4 +20,6 @@ package_t * index_parse(
 		bool         silent
 );
 
+void index_free(package_t * pkg);
+
 #endif

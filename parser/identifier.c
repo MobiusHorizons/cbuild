@@ -100,8 +100,11 @@ static lex_item_t parse_symbol(parser_t *p, lex_item_stack_t * s, lex_item_t typ
 	bool has_type = type.type != 0;
 
 	rewind_until(p, s, item);
-	item.length = asprintf(&item.value, "%s%s%s",
+	char * symbol_name = NULL;
+	asprintf(&symbol_name, "%s%s%s",
 			has_type ? type.value : "", has_type ? " " : "", symbol->symbol);
+	item = lex_item_replace_value(item, symbol_name);
+
 	lex_item_stack_free(s);
 	return item;
 }
@@ -134,8 +137,10 @@ lex_item_t parser_identifier_parse_typed(parser_t * p, lex_item_t type, lex_item
 
 	if (is_export) package_export_export_headers(p->pkg, imp->pkg);
 
-	ident        = type;
-	ident.length = asprintf(&ident.value, "%s %s", type.value, exp->symbol);
+	char * typed_name = NULL;
+	asprintf(&typed_name, "%s %s", type.value, exp->symbol);
+
+	ident = lex_item_replace_value(type, typed_name);
 
 	lex_item_stack_free(s);
 	return ident;
@@ -155,8 +160,8 @@ lex_item_t parser_identifier_parse (parser_t * p, lex_item_t item, bool is_expor
 	if (name.type == 0) return parse_symbol(p, s, type, item);
 
 	if (strcmp(from.value, "global") == 0) {
-	name = lex_item_dup(name);
-	lex_item_stack_free(s);
+		name = lex_item_dup(name);
+		lex_item_stack_free(s);
 		return name;
 	}
 
@@ -168,16 +173,28 @@ lex_item_t parser_identifier_parse (parser_t * p, lex_item_t item, bool is_expor
 		parser_errorf(p, name, "", "Package '%s' does not export the symbol '%s'",
 				from.value, name.value
 		);
-	lex_item_stack_free(s);
+		lex_item_stack_free(s);
 		return cleanup(p, s);
 	}
 
 	bool has_type = type.type != 0;
 	if (is_export) package_export_export_headers(p->pkg, imp->pkg);
 
-	ident        = (has_type) ? type : from;
-	ident.length = asprintf(&ident.value, "%s%s%s",
-			has_type ? type.value : "", has_type ? " " : "", exp->symbol);
+	char * symbol_name = NULL;
+	asprintf(&symbol_name, "%s%s%s",
+		has_type ? type.value : "",
+		has_type ? " " : "",
+		exp->symbol
+	);
+	lex_item_t start = (has_type) ? type : from;
+
+	ident = lex_item_new(
+		symbol_name,
+		start.type, 
+		start.line,
+		start.line_pos,
+		start.start
+	);
 
 	lex_item_stack_free(s);
 	return ident;

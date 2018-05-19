@@ -12,6 +12,7 @@
 
 
 #include "package/index.h"
+#include "lexer/item.h"
 #include "package/package.h"
 #include "package/import.h"
 #include "makefile.h"
@@ -20,8 +21,9 @@
 package_t * generate(const char * filename, bool force, bool no_output) {
   char * error = NULL;
   package_t * pkg = index_new(filename, &error, force, no_output);
+  lex_item_unfreed();
 
-  if (pkg == NULL || pkg->errors > 0) return NULL;
+  /*if (pkg == NULL || pkg->errors > 0) return NULL;*/
 
   if (error != NULL) {
     fprintf(stderr, "%s\n", error);
@@ -115,5 +117,7 @@ int main(int argc, const char ** argv){
   cli_command(c, "generate", do_generate, "generate .c .h and .mk files", false, &options);
   cli_command(c, "clean",    do_clean,    "clean generated files",        false, &options);
 
-  return cli_parse(c, argc, argv);
+  int result = cli_parse(c, argc, argv);
+  cli_free(c);
+  return result;
 }

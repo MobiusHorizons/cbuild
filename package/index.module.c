@@ -127,7 +127,7 @@ Package.t * new(const char * relative_path, char ** error, bool force, bool sile
 	stream.t * input = file.open(relative_path, O_RDONLY);
 	if (input->error.code != 0) {
 		*error = strdup(input->error.message);
-	free(key);
+		free(key);
 		return NULL;
 	}
 
@@ -136,8 +136,10 @@ Package.t * new(const char * relative_path, char ** error, bool force, bool sile
 	if (force || (!silent && utils.newer(relative_path, generated))) {
 		out = atomic.open(generated);
 		if (out->error.code != 0) {
-		free(key);
+			free(key);
+			fprintf(stderr, "ERROR: '%s'\n", out->error.message);
 			if (error) *error = strdup(out->error.message);
+			atomic.abort(out);
 			return NULL;
 		}
 	}
@@ -145,11 +147,40 @@ Package.t * new(const char * relative_path, char ** error, bool force, bool sile
 	Package.t * p = parse(input, out, relative_path, key, generated, error, force, silent);
 
 	if (p == NULL || *error != NULL) {
-	free(key);
+		free(key);
 		if (out) atomic.abort(out);
 		return NULL;
 	}
 
 	if (out) stream.close(out);
 	return p;
+}
+
+export void free(Package.t * pkg) {
+	if (pkg == NULL) return;
+	if (Package.path_cache) {
+		hash_del(Package.path_cache, pkg->source_abs); 
+	}
+
+	// exports
+	int i;
+	for (i = 0; i < pkg->n_exports; i++) {
+		Export.free((Export.t *) pkg->ordered[i]);
+	}
+	global.free(pkg->ordered);
+
+	hash_free(pkg->exports);
+	hash_free(pkg->symbols);
+
+	global.free(pkg->name);
+	global.free(pkg->source_abs);
+	global.free(pkg->generated);
+	global.free(pkg->header);
+
+	// imports
+	hash_each_val(pkg->deps, {
+		free(Import.free((Import.t *) val));
+	});
+	hash_free(pkg->deps);
+	global.free(pkg);
 }

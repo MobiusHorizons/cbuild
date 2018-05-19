@@ -3,6 +3,7 @@
 #include "../lexer/item.h"
 #include "../package/package.h"
 #include "../package/import.h"
+#include "../utils/strings.h"
 
 
 #include "../deps/hash/hash.h"
@@ -47,6 +48,7 @@ int build_parse (parser_t * p) {
 
 	lex_item_t item = parser_skip(p, item_whitespace, 0);
 	parse_fn fn = (parse_fn) hash_get(options, item.value);
+	lex_item_free(item);
 	if (fn != NULL)  return fn(p);
 
 	return errorf(p, item, "Expecting one of \n"
@@ -65,18 +67,25 @@ static int parse_depends(parser_t * p) {
 	if (semicolon.type != item_symbol && semicolon.value[0] != ';') {
 		return errorf(p, semicolon, "Expecting ';' but got '%s'", lex_item_to_string(semicolon));
 	}
+	lex_item_free(semicolon);
 
 	char * error = NULL;
-	package_import_t * imp = package_import_add_c_file(p->pkg, string_parse(filename.value), &error);
+	package_import_t * imp = package_import_add_c_file(
+		p->pkg, 
+		strings_dup(string_parse(filename.value)),
+		&error
+	);
 	if (imp == NULL) {
 		parser_errorf(p, filename, "", "Error adding dependency: %s", error);
 		return -1;
 	}
+	lex_item_free(filename);
 	return 1;
 }
 
 static int parse_set(parser_t * p) {
 	bool is_default = false;
+	bool have_name = false;
 	lex_item_t name;
 	do {
 		name = parser_skip(p, item_whitespace, 0);
@@ -86,10 +95,12 @@ static int parse_set(parser_t * p) {
 		}
 
 		if (strcmp(name.value, "default") == 0) {
-			name.type = 0;
 			is_default = true;
+			lex_item_free(name);
+		} else {
+			have_name = true;
 		}
-	} while (name.type == 0);
+	} while (have_name == false);
 
 	lex_item_t value = parser_skip(p, item_whitespace, 0);
 
@@ -101,15 +112,19 @@ static int parse_set(parser_t * p) {
 	if (semicolon.type != item_symbol && semicolon.value[0] != ';') {
 		return errorf(p, semicolon, "Expecting ';' but got '%s'", lex_item_to_string(semicolon));
 	}
+	lex_item_free(semicolon);
 
 	package_var_t v = {0};
-	v.name      = name.value;
-	v.value     = string_parse(value.value);
+	v.name      = strings_dup(name.value);
+	v.value     = strings_dup(string_parse(value.value));
 	v.operation = is_default ? build_var_set_default : build_var_set;
 
 	p->pkg->variables = realloc(p->pkg->variables, sizeof(package_var_t) * (p->pkg->n_variables + 1));
 	p->pkg->variables[p->pkg->n_variables] = v;
 	p->pkg->n_variables++;
+
+	lex_item_free(name);
+	lex_item_free(value);
 
 	return 1;
 }
@@ -132,14 +147,17 @@ static int parse_append(parser_t * p) {
 	if (semicolon.type != item_symbol && semicolon.value[0] != ';') {
 		return errorf(p, semicolon, "Expecting ';' but got '%s'", lex_item_to_string(semicolon));
 	}
+	lex_item_free(semicolon);
 
 	package_var_t v = {0};
-	v.name      = name.value;
-	v.value     = string_parse(value.value);
+	v.name      = strings_dup(name.value);
+	v.value     = strings_dup(string_parse(value.value));
 	v.operation = build_var_append;
 
 	p->pkg->variables = realloc(p->pkg->variables, sizeof(package_var_t) * (p->pkg->n_variables + 1));
 	p->pkg->variables[p->pkg->n_variables] = v;
 	p->pkg->n_variables++;
+	lex_item_free(name);
+	lex_item_free(value);
 	return 1;
 }

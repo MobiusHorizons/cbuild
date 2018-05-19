@@ -12,6 +12,7 @@ typedef struct {
 	package_t * pkg;
 } package_import_t;
 
+package_t * package_import_free(package_import_t * imp);
 package_import_t * package_import_add(char * alias, char * filename, package_t * parent, char ** error);
 package_import_t * package_import_add_c_file(package_t * parent, char * filename, char ** error);
 package_import_t * package_import_passthrough(package_t * parent, char * filename, char ** error);

@@ -31,12 +31,22 @@ typedef struct {
 	bool             has_value;
 } flag_t;
 
+static void flag_free(flag_t * f) {
+	global.free(f->long_name);
+	global.free(f);
+}
+
 export typedef struct {
 	void       * cb;
 	void       * ctx;
 	char       * name;
 	const char * description;
 } cmd_t;
+
+static void cmd_free(cmd_t * c) {
+	global.free(c->name);
+	global.free(c);
+}
 
 export typedef struct {
 	hash_t      * flags;
@@ -190,27 +200,27 @@ export int parse(cli_t * cli, int argc, const char ** argv) {
 		flag_t * flag = (flag_t *) hash_get(cli->flags, arg_allocated);
 		if (flag != NULL) {
 			parse_flag(flag, arg);
-			free(arg_allocated);
+			global.free(arg_allocated);
 			continue;
 		}
 
 		if (arg[0] == '-') {
 			fprintf(stderr, "Unrecognized flag '%s'\n\n", arg);
-			free(arg_allocated);
+			global.free(arg_allocated);
 			return usage(cli);
 		}
 
 		if (cmd == NULL) {
 			cmd = (cmd_t *) hash_get(cli->commands, arg_allocated);
 			if (cmd) {
-				free(arg_allocated);
+				global.free(arg_allocated);
 				continue;
 			}
 		}
 
 		cli->argv[cli->argc] = arg;
 		cli->argc++;
-		free(arg_allocated);
+		global.free(arg_allocated);
 	}
 
 	// collect args after a --
@@ -226,4 +236,21 @@ export int parse(cli_t * cli, int argc, const char ** argv) {
 	int result = cb(cli, cmd->name, cmd->ctx);
 	if (result == 0) return result;
 	return usage(cli);
+}
+
+export void free(cli_t * cli) {
+	hash_each(cli->flags, {
+		if (key[0] == '-' && key[1] == '-') {
+			flag_free(val);
+		}
+	});
+	hash_free(cli->flags);
+
+	hash_each_val(cli->commands, {
+		cmd_free(val);
+	});
+	hash_free(cli->commands);
+
+	global.free(cli->argv);
+	global.free(cli);
 }

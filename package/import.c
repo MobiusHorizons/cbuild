@@ -19,6 +19,21 @@ typedef struct {
 	package_t * pkg;
 } package_import_t;
 
+package_t * package_import_free(package_import_t * imp) {
+	if (imp == NULL) return NULL;
+	
+	if (imp->alias == imp->filename) {
+		free(imp->alias);
+	} else {
+		free(imp->alias);
+		free(imp->filename);
+	}
+
+	package_t * pkg = imp->pkg;
+	free(imp);
+	return pkg;
+}
+
 package_import_t * package_import_add(char * alias, char * filename, package_t * parent, char ** error) {
 	package_import_t * imp = malloc(sizeof(package_import_t));
 
@@ -63,7 +78,9 @@ package_import_t * package_import_passthrough(package_t * parent, char * filenam
 	}
 
 	hash_each(imp->pkg->exports, {
-		hash_set(parent->exports, strdup(key), val);
+		package_export_t * exp = (package_export_t *) val;
+		hash_set(parent->exports, exp->export_name, exp);
+		/*hash_set(parent->exports, strdup(key), exp);*/
 	});
 
 	package_export_export_headers(parent, imp->pkg);

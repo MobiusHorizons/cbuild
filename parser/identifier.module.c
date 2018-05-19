@@ -100,8 +100,11 @@ static lex_item.t parse_symbol(parser.t *p, stack.t * s, lex_item.t type, lex_it
 	bool has_type = type.type != 0;
 
 	rewind_until(p, s, item);
-	item.length = asprintf(&item.value, "%s%s%s",
+	char * symbol_name = NULL;
+	asprintf(&symbol_name, "%s%s%s",
 			has_type ? type.value : "", has_type ? " " : "", symbol->symbol);
+	item = lex_item.replace_value(item, symbol_name);
+
 	stack.free(s);
 	return item;
 }
@@ -134,8 +137,10 @@ export lex_item.t parse_typed(parser.t * p, lex_item.t type, lex_item.t item, bo
 
 	if (is_export) pkg_export.export_headers(p->pkg, imp->pkg);
 
-	ident        = type;
-	ident.length = asprintf(&ident.value, "%s %s", type.value, exp->symbol);
+	char * typed_name = NULL;
+	asprintf(&typed_name, "%s %s", type.value, exp->symbol);
+
+	ident = lex_item.replace_value(type, typed_name);
 
 	stack.free(s);
 	return ident;
@@ -155,8 +160,8 @@ export lex_item.t parse (parser.t * p, lex_item.t item, bool is_export) {
 	if (name.type == 0) return parse_symbol(p, s, type, item);
 
 	if (strcmp(from.value, "global") == 0) {
-	name = lex_item.dup(name);
-	stack.free(s);
+		name = lex_item.dup(name);
+		stack.free(s);
 		return name;
 	}
 
@@ -168,16 +173,28 @@ export lex_item.t parse (parser.t * p, lex_item.t item, bool is_export) {
 		parser.errorf(p, name, "", "Package '%s' does not export the symbol '%s'",
 				from.value, name.value
 		);
-	stack.free(s);
+		stack.free(s);
 		return cleanup(p, s);
 	}
 
 	bool has_type = type.type != 0;
 	if (is_export) pkg_export.export_headers(p->pkg, imp->pkg);
 
-	ident        = (has_type) ? type : from;
-	ident.length = asprintf(&ident.value, "%s%s%s",
-			has_type ? type.value : "", has_type ? " " : "", exp->symbol);
+	char * symbol_name = NULL;
+	asprintf(&symbol_name, "%s%s%s",
+		has_type ? type.value : "",
+		has_type ? " " : "",
+		exp->symbol
+	);
+	lex_item.t start = (has_type) ? type : from;
+
+	ident = lex_item.new(
+		symbol_name,
+		start.type, 
+		start.line,
+		start.line_pos,
+		start.start
+	);
 
 	stack.free(s);
 	return ident;

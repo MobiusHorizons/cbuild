@@ -28,7 +28,7 @@ static void * parse_c(parser_t * p) {
 	lex_item_t last = {0};
 	int escaped_id = 0;
 	do {
-	lex_item_free(last);
+		lex_item_free(last);
 		last = item;
 		item = parser_next(p);
 
@@ -42,19 +42,19 @@ static void * parse_c(parser_t * p) {
 				break;
 			case item_error:
 				parser_errorf(p, item, "", "");
-		lex_item_free(last);
-		lex_item_free(item);
+				lex_item_free(last);
+				lex_item_free(item);
 				return NULL;
 
 			case item_id:
 				if (last.type == 0 || last.start < last.line_pos) {
-			lex_item_free(last);
-			return parse_keyword(p, item);
-		}
+					lex_item_free(last);
+					return parse_keyword(p, item);
+				}
 				if (escaped_id == 0) {
-			lex_item_free(last);
-			return parse_id(p, item);
-		}
+					lex_item_free(last);
+					return parse_id(p, item);
+				}
 			case item_c_code:
 			default:
 				package_emit(p->pkg, item.value);

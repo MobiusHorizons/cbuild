@@ -1,5 +1,7 @@
 package "lex_item";
 
+import str from "../utils/strings.module.c";
+
 export {
 #include <stdlib.h>
 #include <stdbool.h>
@@ -28,6 +30,8 @@ export enum item_type {
 	item_total_symbols
 } as type;
 
+
+
 export extern const char ** type_names;
 const char * type_names[item_total_symbols] = {
 	"Error",
@@ -53,7 +57,13 @@ export typedef struct {
 	size_t         line;
 	size_t         line_pos;
 	size_t         start;
+	size_t         index;
 } item_t as t;
+
+#ifdef MEM_DEBUG
+static item_t cache[64000];
+static size_t item_index;
+#endif
 
 export extern const item_t empty;
 const item_t empty = {0};
@@ -61,12 +71,18 @@ const item_t empty = {0};
 export item_t new(char * value, enum item_type type, size_t line, size_t line_pos, size_t start) {
 	item_t i = {
 		.value    = value,
-		.length   = strlen(value),
+		.length   = str.len(value),
 		.type     = type,
 		.line     = line,
 		.line_pos = line_pos,
 		.start    = start,
+#ifdef MEM_DEBUG
+		.index    = ++item_index,
+#endif
 	};
+#ifdef MEM_DEBUG
+	cache[i.index - 1] = i;
+#endif
 	return i;
 }
 
@@ -76,10 +92,10 @@ export char * to_string(item_t item) {
 
 	switch(item.type) {
 		case item_error:
-			return strdup(item.value == NULL ? "(null)" : item.value);
+			return str.dup(item.value == NULL ? "(null)" : item.value);
 
 		case item_eof:
-			return strdup("<eof>");
+			return str.dup("<eof>");
 
 		default:
 			if (item.length > 20 || strchr(item.value, '\n') != NULL) {
@@ -104,17 +120,90 @@ export bool equals(item_t a, item_t b) {
 }
 
 export item_t dup(item_t a) {
-	item_t i = {
-		.value    = strdup(a.value),
-		.length   = strlen(a.value),
-		.type     = a.type,
-		.line     = a.line,
-		.line_pos = a.line_pos,
-		.start    = a.start,
-	};
-	return i;
+	return new(
+		str.dup(a.value),
+		a.type,
+		a.line,
+		a.line_pos,
+		a.start
+	);
 }
 
 export void free(item_t item) {
+#ifdef MEM_DEBUG
+	if (item.index > 0) {
+		item_t orig = cache[item.index - 1];
+		if (orig.value != item.value) {
+			printf("Error freeing lex item: value was '%s'. now is ", orig.value);
+
+			printf("\n{\n"
+				"    value    : '%s',\n"
+				"    length   : %ld,\n"
+				"    type     : '%s',\n"
+				"    line     : %ld,\n"
+				"    line_pos : %ld,\n"
+				"    start    : %ld,\n"
+				"}\n\n",
+				item.value,
+				item.length,
+				type_names[item.type],
+				item.line,
+				item.line_pos,
+				item.start
+			);
+		} else {
+			cache[item.index - 1].index = 0;
+		}
+	}
+#endif
 	global.free(item.value);
+}
+
+export item_t replace_value(item_t a, char * value) {
+	free(a);
+	return new(
+		value,
+		a.type,
+		a.line,
+		a.line_pos,
+		a.start
+	);
+}
+
+
+// Test function for debugging memory leaks
+export void unfreed() {
+#ifdef MEM_DEBUG
+	size_t count = 0;
+	size_t i;
+	for (i = 0; i <= item_index; i++) {
+		item_t item = cache[i];
+		if (item.index) {
+			count++;
+			printf("\n[%ld]{\n"
+				"    value    : '%s',\n"
+				"    length   : '%ld',\n"
+				"    type     : '%s',\n"
+				"    line     : '%ld',\n"
+				"    line_pos : '%ld',\n"
+				"    start    : '%ld',\n"
+				"}\n\n",
+				item.index,
+				item.value,
+				item.length,
+				type_names[item.type],
+				item.line,
+				item.line_pos,
+				item.start
+			);
+		}
+
+		// intentionally lose the value so valgrind reports correctly
+		cache[i].value = NULL; 
+	}
+	if (count > 0) {
+		printf("lex_item audit: found %ld unfreed items\n", count);
+	}
+	item_index = 0;
+#endif
 }

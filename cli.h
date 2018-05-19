@@ -40,5 +40,6 @@ void cli_flag_string(cli_t * cli, const char ** out, cli_flag_options options);
 void cli_command(cli_t * cli, const char * name, cli_cmd_cb cb, const char * description, bool is_default, void * ctx);
 int cli_usage(cli_t * cli);
 int cli_parse(cli_t * cli, int argc, const char ** argv);
+void cli_free(cli_t * cli);
 
 #endif

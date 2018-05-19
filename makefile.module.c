@@ -49,7 +49,7 @@ makevars get_makevars(Package.t * pkg, char * makefile) {
 	return v;
 }
 
-int clear_makevars(makevars v, int result) {
+int clear_makevars(makevars v, int result, char * cmd) {
 	chdir(v.cwd);
 
 	free(v.cwd);
@@ -57,6 +57,7 @@ int clear_makevars(makevars v, int result) {
 	free(v.makefile_dir);
 	free(v.makefile_base);
 	free(v.makefile);
+	free(cmd);
 
 	return result;
 }
@@ -68,7 +69,7 @@ export int make(Package.t * pkg, char * makefile) {
 	char * cmd;
 	asprintf(&cmd, "make -f %s %s", v.makefile_base,  v.target);
 
-	return clear_makevars(v, system(cmd));
+	return clear_makevars(v, system(cmd), cmd);
 }
 
 export int clean(Package.t * pkg, char * makefile) {
@@ -78,7 +79,7 @@ export int clean(Package.t * pkg, char * makefile) {
 	char * cmd;
 	asprintf(&cmd, "make -f %s CLEAN_%s", v.makefile_base,  v.target);
 
-	return clear_makevars(v, system(cmd));
+	return clear_makevars(v, system(cmd), cmd);
 }
 
 char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps) {
@@ -93,7 +94,9 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
 	deps = realloc(deps, len + strlen(object) + 2);
 	sprintf(deps + len, " %s", object);
 
-	stream.printf(out, "#dependencies for package '%s'\n", utils.relative(root->source_abs, pkg->generated));
+	char * package_rel = utils.relative(root->source_abs, pkg->generated);
+	stream.printf(out, "#dependencies for package '%s'\n", package_rel);
+	global.free(package_rel);
 
 	int i;
 	for (i = 0; i < pkg->n_variables; i++) {
@@ -102,6 +105,8 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
 	}
 
 	stream.printf(out, "%s: %s", object, source);
+	global.free(source);
+	global.free(object);
 
 	if (pkg->deps == NULL) {
 	stream.printf(out,"\n\n");
@@ -110,8 +115,11 @@ char * write_deps(Package.t * pkg, Package.t * root, stream.t * out, char * deps
 
 	hash_each_val(pkg->deps, {
 			pkg_import.t * dep = (pkg_import.t *) val;
-			if (dep && dep->pkg && dep->pkg->header)
-				stream.printf(out, " %s", utils.relative(root->source_abs, dep->pkg->header));
+			if (dep && dep->pkg && dep->pkg->header) {
+				char * path = utils.relative(root->source_abs, dep->pkg->header);
+				stream.printf(out, " %s", path);
+				global.free(path);
+			}
 	});
 	stream.printf(out,"\n\n");
 
@@ -155,6 +163,7 @@ export char * write(Package.t * pkg, const char * name) {
 
 	stream.printf(mkfile, "CLEAN_%s:\n", target);
 	stream.printf(mkfile, "\trm -rf %s%s\n", target, deps);
+	free(target);
 
 	stream.close(mkfile);
 	free(deps);

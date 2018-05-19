@@ -1,6 +1,5 @@
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
 
 build depends "../deps/hash/hash.c";
 #include "../deps/hash/hash.h"
@@ -8,6 +7,7 @@ build depends "../deps/hash/hash.c";
 import parser     from "./parser.module.c";
 import string     from "string.module.c";
 import utils      from "../utils/utils.module.c";
+import str        from "../utils/strings.module.c";
 import identifier from "./identifier.module.c";
 import lex_item   from "../lexer/item.module.c";
 import Package    from "../package/package.module.c";
@@ -64,12 +64,16 @@ static void rewind_whitespace(parser.t * p, decl_t * decl, lex_item.t item) {
 }
 
 static lex_item.t symbol_rename(parser.t * p, decl_t * decl, lex_item.t name, lex_item.t alias) {
-	char * export_name = alias.type == 0 ? name.value : alias.value;
 	int i;
 	for (i = 0; i < decl->length; i++) {
 		lex_item.t item = decl->items[i];
 		if (lex_item.equals(name, item)) {
-			item.length = asprintf(&item.value, "%s_%s", p->pkg->name, export_name);
+			char * symbol_name = NULL;
+
+			char * export_name = alias.type == 0 ? name.value : alias.value;
+			asprintf(&symbol_name, "%s_%s", p->pkg->name, export_name);
+
+			item = lex_item.replace_value(item, symbol_name);
 			decl->items[i] = item;
 			return item;
 		}
@@ -79,9 +83,9 @@ static lex_item.t symbol_rename(parser.t * p, decl_t * decl, lex_item.t name, le
 
 static void free_decl(decl_t * decl) {
 	int i;
-	/*for (i = 0; i < decl->length; i++) {*/
-		/*lex_item.free(decl->items[i]);*/
-	/*}*/
+	for (i = 0; i < decl->length; i++) {
+		lex_item.free(decl->items[i]);
+	}
 	global.free(decl->items);
 }
 
@@ -114,7 +118,6 @@ static char * emit(parser.t * p, decl_t * decl, bool is_function, bool is_extern
 	if (is_function && !is_extern) output[length++] = ';';
 
 	output[length] = 0;
-	free_decl(decl);
 	return output;
 }
 
@@ -210,13 +213,16 @@ export int parse(parser.t * p) {
 			t = 1;
 			break;
 		case item_symbol:
-			if (type.value[0] == '*') return parse_passthrough(p);
+			if (type.value[0] == '*') {
+				lex_item.free(type);
+				return parse_passthrough(p);
+			}
 			break;
 		case item_open_symbol:
 			if (type.value[0] == '{') {
 				fn = parse_export_block;
-				type.value = "";
-				type.length = 0;
+				lex_item.free(type);
+				type.value = "{";
 				t = 0;
 			}
 			break;
@@ -228,7 +234,7 @@ export int parse(parser.t * p) {
 		parser.backup(p, type);
 		type.type = item_symbol;
 		type.value = "variable";
-		type.length = strlen("variable");
+		type.length = str.len("variable");
 		name = parse_variable(p, &decl);
 		t = 2;
 	} else {
@@ -249,6 +255,7 @@ export int parse(parser.t * p) {
 		return -1;
 	}
 
+	lex_item.t original_name = lex_item.dup(name);
 	lex_item.t symbol = symbol_rename(p, &decl, name, alias);
 
 	if (symbol.type == 0 && fn != parse_export_block) {
@@ -257,7 +264,17 @@ export int parse(parser.t * p) {
 		return -1;
 	}
 
-	pkg_export.add(name.value, alias.value, symbol.value, type.value, emit(p, &decl, t==2, is_extern), p->pkg);
+	pkg_export.add(
+		str.dup(original_name.value),
+		str.dup(alias.value),
+		str.dup(symbol.value),
+		type.value, 
+		emit(p, &decl, t==2, is_extern),
+		p->pkg
+	);
+	lex_item.free(original_name);
+	lex_item.free(alias);
+	free_decl(&decl);
 	return 1;
 }
 
@@ -269,6 +286,7 @@ static int parse_passthrough(parser.t * p) {
 		free_decl(&decl);
 		return -1;
 	}
+	lex_item.free(from);
 
 	lex_item.t filename = collect(p, &decl);
 	if (filename.type != item_quoted_string) {
@@ -284,18 +302,21 @@ static int parse_passthrough(parser.t * p) {
 	}
 
 	char * error = NULL;
-	pkg_import.t * imp = pkg_import.passthrough(p->pkg, string.parse(filename.value), &error);
+	pkg_import.t * imp = pkg_import.passthrough(p->pkg, str.dup(string.parse(filename.value)), &error);
 	if (imp == NULL) {
 		parser.errorf(p, filename, "Exporting passthrough: ", "%s", error);
 		free_decl(&decl);
 		return -1;
 	}
+	lex_item.free(filename);
 
 	char * header = NULL;
-	asprintf(&header, "#include \"%s\"", utils.relative(p->pkg->source_abs, imp->pkg->header));
+	char * rel =  utils.relative(p->pkg->source_abs, imp->pkg->header);
+	asprintf(&header, "#include \"%s\"", rel);
 	Package.emit(p->pkg, header);
 
 	free_decl(&decl);
+	global.free(rel);
 	global.free(header);
 	return 1;
 }
@@ -314,6 +335,7 @@ static lex_item.t parse_as(parser.t * p, decl_t * decl) {
 		}
 		return lex_item.empty;
 	}
+	lex_item.free(as);
 
 	while(decl->length > start) {
 		decl->length--;
@@ -550,8 +572,9 @@ static lex_item.t parse_export_block(parser.t * p, decl_t * decl) {
 
 			case item_close_symbol:
 				if (item.value[0] == '}') {
+					lex_item.free(item);
 					item.value  = "block";
-					item.length = strlen("block");
+					item.length = str.len("block");
 					return item;
 				};
 				break;

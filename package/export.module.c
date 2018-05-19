@@ -9,6 +9,7 @@ import Package from "./package.module.c";
 import stream  from "../deps/stream/stream.module.c";
 import atomic  from "./atomic-stream.module.c";
 import utils   from "../utils/utils.module.c";
+import str     from "../utils/strings.module.c";
 build  depends      "../deps/hash/hash.c";
 
 export enum export_type {
@@ -37,8 +38,22 @@ export typedef struct {
 	char      * declaration;
 	char      * symbol;
 	enum export_type   type;
-	Package.t * pkg;
 } Export_t as t;
+
+export void free(Export_t * exp) {
+	if (exp == NULL) return;
+
+	if (exp->local_name == exp->export_name) {
+		global.free(exp->local_name);
+	} else {
+		global.free(exp->local_name);
+		global.free(exp->export_name);
+	}
+	global.free(exp->declaration);
+
+	global.free(exp->symbol);
+	global.free(exp);
+}
 
 static hash_t * types = NULL;
 static void init_types() {
@@ -53,21 +68,31 @@ static void init_types() {
 }
 
 export char * add(char * local, char * alias, char * symbol, char * type, char * declaration, Package.t * parent) {
+	char * export_name = alias == NULL ? local : alias; 
+	if (hash_has(parent->exports, export_name)) {
+		global.free(local);
+		global.free(alias);
+		global.free(symbol);
+		global.free(declaration);
+		return export_name;
+	}
+
 	if (types == NULL) init_types();
 
 	Export_t * exp = malloc(sizeof(Export_t));
 
 	exp->local_name  = local;
-	exp->export_name = alias == NULL ? local : alias;
+	exp->export_name = export_name;
 	exp->declaration = declaration;
 	exp->type        = (enum export_type) hash_get(types, type);
 	exp->symbol      = symbol;
 
-	if (!hash_has(parent->exports, exp->export_name)) {
-		parent->ordered = realloc(parent->ordered, sizeof(void*) * (parent->n_exports + 1));
-		parent->ordered[parent->n_exports] = exp;
-		parent->n_exports ++;
-	}
+	parent->ordered = realloc(
+		parent->ordered,
+		sizeof(void*) * (parent->n_exports + 1)
+	);
+	parent->ordered[parent->n_exports] = exp;
+	parent->n_exports ++;
 
 	hash_set(parent->exports, exp->export_name, exp);
 	hash_set(parent->symbols, exp->local_name,  exp);
@@ -76,8 +101,8 @@ export char * add(char * local, char * alias, char * symbol, char * type, char *
 }
 
 static char * get_header_path(char * generated) {
-	char * header = strdup(generated);
-	size_t len = strlen(header);
+	char * header = str.dup(generated);
+	size_t len = str.len(header);
 	header[len - 1] = 'h';
 	return header;
 }
@@ -124,6 +149,6 @@ export void export_headers(Package.t * pkg, Package.t * dep) {
 	char * decl = NULL;
 	asprintf(&decl, "#include \"%s\"", rel);
 
-	add(strdup(rel), NULL, strdup(""), "header", decl, pkg);
-	free(rel);
+	add(str.dup(rel), NULL, str.dup(""), "header", decl, pkg);
+	global.free(rel);
 }

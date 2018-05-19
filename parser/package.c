@@ -2,6 +2,7 @@
 #include "parser.h"
 #include "../lexer/item.h"
 #include "string.h"
+#include "../utils/strings.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -24,7 +25,10 @@ int parser_package_parse(parser_t * p) {
 	if (semicolon.type != item_symbol && semicolon.value[0] != ';') {
 		return errorf(p, semicolon, "Expecting ';' got %s", lex_item_to_string(semicolon));
 	}
+	lex_item_free(semicolon);
 
-	p->pkg->name = string_parse(name.value);
+	free(p->pkg->name);
+	p->pkg->name = strings_dup(string_parse(name.value));
+	lex_item_free(name);
 	return 1;
 }

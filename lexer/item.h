@@ -34,6 +34,7 @@ typedef struct {
 	size_t         line;
 	size_t         line_pos;
 	size_t         start;
+	size_t         index;
 } lex_item_t;
 
 extern const lex_item_t lex_item_empty;
@@ -42,5 +43,7 @@ char * lex_item_to_string(lex_item_t item);
 bool lex_item_equals(lex_item_t a, lex_item_t b);
 lex_item_t lex_item_dup(lex_item_t a);
 void lex_item_free(lex_item_t item);
+lex_item_t lex_item_replace_value(lex_item_t a, char * value);
+void lex_item_unfreed();
 
 #endif

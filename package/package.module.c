@@ -67,17 +67,3 @@ export package_t * c_file(char * abs_path, char ** error) {
 	hash_set(path_cache, abs_path, pkg);
 	return pkg;
 }
-
-export void free(package_t * pkg) {
-	if (pkg == NULL) return;
-
-	hash_clear(pkg->deps);
-	hash_clear(pkg->exports);
-	hash_clear(pkg->symbols);
-
-	global.free(pkg->name);
-	global.free(pkg->source_abs);
-	global.free(pkg->generated);
-	global.free(pkg->header);
-	global.free(pkg);
-}

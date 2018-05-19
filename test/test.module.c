@@ -9,6 +9,10 @@ package "main";
 build append CFLAGS "-std=c99";
 build append CFLAGS "-D_DEFAULT_SOURCE";
 build append CFLAGS "-D_GNU_SOURCE";
+build append CFLAGS "-g3";
+build append CFLAGS "-fsanitize=address";
+build append CFLAGS "-DMEM_DEBUG";
+
 
 build depends "../deps/hash/hash.c";
 #include "../deps/hash/hash.h"
@@ -16,6 +20,7 @@ build depends "../deps/hash/hash.c";
 import Pkg        from "../package/index.module.c";
 import Package    from "../package/package.module.c";
 import pkg_export from "../package/export.module.c";
+import lex_item   from "../lexer/item.module.c";
 import string     from "./string-stream.module.c";
 import stream     from "../deps/stream/stream.module.c";
 
@@ -354,17 +359,20 @@ static bool run_test(test_case c) {
   asprintf(&key, "%s/%s", cwd, c.name);
   char * generated = Pkg.generated_name(key);
   Package.t * p = Pkg.parse(in, out, c.name, key, generated, &error, false, false);
+  lex_item.unfreed();
 
   char * buf = string.get_buffer(out);
   bool desired_output = buf && strcmp(buf, c.output) == 0;
   bool function_test  = c.fn ? c.fn(p, c, buf, &fn_err) : true;
+
+  Pkg.free(p);
 
   if (error) {
     printf(RED    "%s\n" RESET, error);
   }
   if ( desired_output && function_test) {
     printf(GREEN "✓ " RESET BOLD "%s: \n" RESET, c.desc); fflush(stdout);
-    stream.close(out);
+	stream.close(out);
     return true;
   }
 
