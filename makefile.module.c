@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <sys/wait.h>
 #include "parser/colors.h"
 
 build depends "deps/hash/hash.c";
@@ -59,7 +60,9 @@ int clear_makevars(makevars v, int result, char * cmd) {
 	free(v.makefile);
 	free(cmd);
 
-	return result;
+	if (result == 0 || result == -1) return result;
+	if (result == 127) return -1;
+	return WEXITSTATUS(result);
 }
 
 export int make(Package.t * pkg, char * makefile) {
