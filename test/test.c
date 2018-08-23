@@ -10,7 +10,7 @@
 
 
 
-
+// build append CFLAGS "-fsanitize=address"; // unfortunately this does not work on travis yet.
 
 
 

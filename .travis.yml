@@ -12,4 +12,4 @@ script:
   - make cbuild
   - cd test
   - ../cbuild test.module.c
-  - ./test
+  - LSAN_OPTION=verbosity=1 ./test

@@ -10,7 +10,7 @@ build append CFLAGS "-std=c99";
 build append CFLAGS "-D_DEFAULT_SOURCE";
 build append CFLAGS "-D_GNU_SOURCE";
 build append CFLAGS "-g3";
-build append CFLAGS "-fsanitize=address";
+// build append CFLAGS "-fsanitize=address"; // unfortunately this does not work on travis yet.
 build append CFLAGS "-DMEM_DEBUG";
 
 

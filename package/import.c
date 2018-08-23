@@ -77,10 +77,9 @@ package_import_t * package_import_passthrough(package_t * parent, char * filenam
 		return NULL;
 	}
 
-	hash_each(imp->pkg->exports, {
+	hash_each_val(imp->pkg->exports, {
 		package_export_t * exp = (package_export_t *) val;
 		hash_set(parent->exports, exp->export_name, exp);
-		/*hash_set(parent->exports, strdup(key), exp);*/
 	});
 
 	package_export_export_headers(parent, imp->pkg);

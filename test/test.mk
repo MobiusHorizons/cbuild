@@ -3,7 +3,6 @@ CFLAGS += -std=c99
 CFLAGS += -D_DEFAULT_SOURCE
 CFLAGS += -D_GNU_SOURCE
 CFLAGS += -g3
-CFLAGS += -fsanitize=address
 CFLAGS += -DMEM_DEBUG
 test.o: test.c ../deps/stream/stream.h string-stream.h ../lexer/item.h ../package/package.h ../package/export.h ../package/index.h
 
